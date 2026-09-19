@@ -1,0 +1,6 @@
+{
+  "name": "MinaNihongo - Belajar Bahasa Jepang",
+  "description": "Aplikasi kuis kosakata Minna no Nihongo (Level 1-17) dan Kuis 580 Kanji Irodori (Nyuumon, Shokyuu 1, Shokyuu 2). Dilengkapi fitur kuis interaktif, flashcard, kamus, latihan menulis, leaderboard, mode duel PvP, dan tracking progres belajar.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "userProgress": {
+      "title": "User Progress",
+      "description": "User high scores and favorite vocabulary",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "highScores": { 
+          "type": "object",
+          "additionalProperties": { "type": "number" }
+        },
+        "favorites": {
+          "type": "array",
+          "items": { 
+            "type": "object",
+            "properties": {
+              "jpn": { "type": "string" },
+              "ind": { "type": "string" }
+            },
+            "required": ["jpn", "ind"]
+          }
+        },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "highScores", "favorites", "updatedAt"]
+    },
+    "duels": {
+      "title": "Duel Session",
+      "description": "Remote multiplayer quiz session",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "creator": { "type": "object" },
+        "opponent": { "type": "object" },
+        "level": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "joined", "ongoing", "finished"] },
+        "scores": { "type": "object" },
+        "lives": { "type": "object" },
+        "winnerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["creator", "level", "status", "createdAt", "updatedAt"]
+    },
+    "presence": {
+      "title": "User Presence",
+      "description": "Online status and basic profile for real-time visibility",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "photo": { "type": "string" },
+        "lastSeen": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "name", "lastSeen"]
+    },
+    "visitors": {
+      "title": "Visitor Log",
+      "description": "Records of users accessing the application without login",
+      "type": "object",
+      "properties": {
+        "sessionId": { "type": "string" },
+        "userAgent": { "type": "string" },
+        "platform": { "type": "string" },
+        "language": { "type": "string" },
+        "screen": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "path": { "type": "string" }
+      },
+      "required": ["sessionId", "userAgent", "timestamp"]
+    }
+  },
+  "firestore": {
+    "progress/{userId}": {
+      "schema": "userProgress",
+      "description": "Real-time sync of level progress and bookmarks"
+    },
+    "duels/{duelId}": {
+      "schema": "duels",
+      "description": "Active remote duel sessions"
+    },
+    "presence/{userId}": {
+      "schema": "presence",
+      "description": "Real-time user online status"
+    },
+    "visitors/{visitId}": {
+      "schema": "visitors",
+      "description": "Public log of anonymous access events"
+    }
+  }
+}

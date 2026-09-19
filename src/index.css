@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sakura: #ffb7c5;
+}
+
+@layer base {
+  html, body, button, a, input, select, textarea {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    @apply transition-colors duration-300;
+  }
+
+  /* Universal accessible focus indicators for keyboard & screen reader navigation */
+  :focus-visible {
+    outline: 3px solid #f59e0b !important;
+    outline-offset: 2px !important;
+  }
+}
+
+/* Custom Effects */
+.mask-fuji {
+  clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+}
+
+/* High Contrast Mode Styles (WCAG AAA Compliance) */
+html.high-contrast {
+  --tw-contrast: 1.25;
+}
+
+html.high-contrast body {
+  font-weight: 500;
+}
+
+html.high-contrast:not(.dark) {
+  background-color: #ffffff !important;
+  color: #050814 !important;
+}
+
+html.high-contrast:not(.dark) .text-slate-400,
+html.high-contrast:not(.dark) .text-slate-500,
+html.high-contrast:not(.dark) .text-slate-600 {
+  color: #1e293b !important;
+}
+
+html.high-contrast.dark {
+  background-color: #020617 !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast.dark .text-slate-400,
+html.high-contrast.dark .text-slate-500,
+html.high-contrast.dark .text-slate-600,
+html.high-contrast.dark .text-slate-700 {
+  color: #f1f5f9 !important;
+}
+
+html.high-contrast button,
+html.high-contrast [role="button"],
+html.high-contrast input,
+html.high-contrast select,
+html.high-contrast textarea {
+  border-width: 2px !important;
+}
+
+html.high-contrast:not(.dark) button,
+html.high-contrast:not(.dark) [role="button"],
+html.high-contrast:not(.dark) input,
+html.high-contrast:not(.dark) select,
+html.high-contrast:not(.dark) textarea {
+  border-color: #0f172a !important;
+  color: #000000 !important;
+}
+
+html.high-contrast.dark button,
+html.high-contrast.dark [role="button"],
+html.high-contrast.dark input,
+html.high-contrast.dark select,
+html.high-contrast.dark textarea {
+  border-color: #ffffff !important;
+  color: #ffffff !important;
+}
+
+html.high-contrast a {
+  text-decoration: underline !important;
+  font-weight: 700 !important;
+}
+
+/* Accessible text size scaling */
+html.text-size-large {
+  font-size: 112%;
+}
+
+html.text-size-xlarge {
+  font-size: 125%;
+}

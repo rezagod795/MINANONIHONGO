@@ -1,0 +1,133 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 3. Path Variable Hardening (Helper)
+    function isValidId(id) { 
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); 
+    }
+    
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // 6. PII Isolation - We only allow access to own progress
+    match /progress/{userId} {
+      allow get: if isSignedIn() && request.auth.uid == userId && isValidId(userId);
+      // Deny list by default to prevent scraping, though get is specific
+      allow list: if false; 
+      
+      allow create: if isSignedIn() 
+                    && request.auth.uid == userId 
+                    && isValidId(userId)
+                    && isValidProgress(request.resource.data)
+                    && request.resource.data.updatedAt == request.time;
+      
+      allow update: if isSignedIn() 
+                    && request.auth.uid == userId 
+                    && isValidId(userId)
+                    && isValidProgress(request.resource.data)
+                    // 10. Temporal Integrity
+                    && request.resource.data.updatedAt == request.time
+                    // 9. Immortal UID
+                    && request.resource.data.uid == resource.data.uid;
+    }
+
+    // Remote Duels
+    match /duels/{duelId} {
+      allow get: if isSignedIn() && isValidId(duelId);
+      allow list: if false;
+      
+      allow create: if isSignedIn() 
+                    && isValidId(duelId)
+                    && isValidDuel(request.resource.data)
+                    && request.resource.data.creator.uid == request.auth.uid
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.createdAt == request.time;
+                    
+      allow update: if isSignedIn()
+                    && isValidId(duelId)
+                    && isValidDuel(request.resource.data)
+                    && (
+                      // Join Action
+                      (resource.data.status == 'pending' && request.resource.data.status == 'joined' && request.resource.data.opponent.uid == request.auth.uid)
+                      ||
+                      // Game Action
+                      (resource.data.status in ['joined', 'ongoing', 'finished'] 
+                        && (request.auth.uid == resource.data.creator.uid || (resource.data.keys().hasAll(['opponent']) && request.auth.uid == resource.data.opponent.uid)))
+                    )
+                    && request.resource.data.updatedAt == request.time;
+    }
+
+    // User Presence
+    match /presence/{userId} {
+      allow read: if isSignedIn() && isValidId(userId);
+      // Allow listing presence for social features
+      allow list: if isSignedIn();
+      
+      allow create: if isSignedIn() 
+                    && request.auth.uid == userId 
+                    && isValidId(userId)
+                    && isValidPresence(request.resource.data)
+                    && request.resource.data.lastSeen == request.time;
+      
+      allow update: if isSignedIn() 
+                    && request.auth.uid == userId 
+                    && isValidId(userId)
+                    && isValidPresence(request.resource.data)
+                    && request.resource.data.lastSeen == request.time
+                    && request.resource.data.uid == resource.data.uid;
+
+      allow delete: if isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Visitor Log Rules
+    match /visitors/{visitId} {
+      allow create: if isValidId(visitId) 
+                    && isValidVisitor(request.resource.data)
+                    && request.resource.data.timestamp == request.time;
+      // Only the developer can view the visitor logs
+      allow get, list: if isSignedIn() && request.auth.token.email == "duta070905@gmail.com" && request.auth.token.email_verified == true;
+    }
+
+    // 2. Validation Blueprint (Anti-Update-Gap)
+    function isValidProgress(data) {
+      return data.keys().hasAll(['uid', 'highScores', 'favorites', 'updatedAt'])
+             && data.keys().size() == 4
+             && data.uid is string
+             && data.highScores is map
+             && data.favorites is list
+             // 5. Total Array Guarding
+             && data.favorites.size() <= 500
+             && (data.favorites.size() == 0 || data.favorites[0] is map);
+    }
+
+    function isValidDuel(data) {
+       return data.keys().hasAll(['creator', 'level', 'status', 'createdAt', 'updatedAt'])
+              && data.creator.uid is string
+              && data.level is number
+              && data.status is string;
+    }
+
+    function isValidPresence(data) {
+      return data.keys().hasAll(['uid', 'name', 'lastSeen'])
+             && (data.keys().size() == 3 || (data.keys().size() == 4 && data.keys().hasAll(['photo'])))
+             && data.uid is string
+             && data.name is string
+             && data.name.size() <= 100
+             && data.lastSeen == request.time;
+    }
+
+    function isValidVisitor(data) {
+      return data.keys().hasAll(['sessionId', 'userAgent', 'timestamp'])
+             && data.sessionId is string
+             && data.userAgent is string
+             && data.userAgent.size() <= 1000
+             && data.timestamp == request.time;
+    }
+  }
+}

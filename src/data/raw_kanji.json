@@ -1,0 +1,3487 @@
+{
+  "title": "Kanji JFT dan Terjemahan",
+  "source": "Kanji JFT dan Terjemahan.pdf",
+  "total_entries": 580,
+  "vocabulary": [
+    {
+      "no": 1,
+      "kanji": "名前",
+      "reading": "なまえ",
+      "meaning_id": "Nama"
+    },
+    {
+      "no": 2,
+      "kanji": "氏名",
+      "reading": "しめい",
+      "meaning_id": "Nama Lengkap"
+    },
+    {
+      "no": 3,
+      "kanji": "前",
+      "reading": "まえ",
+      "meaning_id": "Depan"
+    },
+    {
+      "no": 4,
+      "kanji": "午前",
+      "reading": "ごぜん",
+      "meaning_id": "AM"
+    },
+    {
+      "no": 5,
+      "kanji": "国",
+      "reading": "くに",
+      "meaning_id": "Negara"
+    },
+    {
+      "no": 6,
+      "kanji": "国際交流",
+      "reading": "こくさいこうりゅう",
+      "meaning_id": "Pertukaran Lintas Budaya"
+    },
+    {
+      "no": 7,
+      "kanji": "外国",
+      "reading": "がいこく",
+      "meaning_id": "Luar Negeri"
+    },
+    {
+      "no": 8,
+      "kanji": "私",
+      "reading": "わたし",
+      "meaning_id": "Saya"
+    },
+    {
+      "no": 9,
+      "kanji": "父",
+      "reading": "ちち",
+      "meaning_id": "Ayah"
+    },
+    {
+      "no": 10,
+      "kanji": "お父さん",
+      "reading": "おとうさん",
+      "meaning_id": "Ayah"
+    },
+    {
+      "no": 11,
+      "kanji": "母",
+      "reading": "はは",
+      "meaning_id": "Ibu"
+    },
+    {
+      "no": 12,
+      "kanji": "お母さん",
+      "reading": "おかあさん",
+      "meaning_id": "Ibu"
+    },
+    {
+      "no": 13,
+      "kanji": "子ども",
+      "reading": "こども",
+      "meaning_id": "Anak-anak"
+    },
+    {
+      "no": 14,
+      "kanji": "男の子",
+      "reading": "おとこのこ",
+      "meaning_id": "Laki-laki"
+    },
+    {
+      "no": 15,
+      "kanji": "女の子",
+      "reading": "おんなのこ",
+      "meaning_id": "Perempuan"
+    },
+    {
+      "no": 16,
+      "kanji": "日本",
+      "reading": "にほん",
+      "meaning_id": "Jepang"
+    },
+    {
+      "no": 17,
+      "kanji": "～曜日",
+      "reading": "～ようび",
+      "meaning_id": "Hari～"
+    },
+    {
+      "no": 18,
+      "kanji": "～日",
+      "reading": "～にち",
+      "meaning_id": "Tanggal～"
+    },
+    {
+      "no": 19,
+      "kanji": "今日",
+      "reading": "きょう",
+      "meaning_id": "Hari Ini"
+    },
+    {
+      "no": 20,
+      "kanji": "日本語",
+      "reading": "にほんご",
+      "meaning_id": "Bahasa Jepang"
+    },
+    {
+      "no": 21,
+      "kanji": "昨日",
+      "reading": "きのう",
+      "meaning_id": "Kemarin"
+    },
+    {
+      "no": 22,
+      "kanji": "明日",
+      "reading": "あした",
+      "meaning_id": "Besok"
+    },
+    {
+      "no": 23,
+      "kanji": "毎日",
+      "reading": "まいにち",
+      "meaning_id": "Setiap Hari"
+    },
+    {
+      "no": 24,
+      "kanji": "誕生日",
+      "reading": "たんじょうび",
+      "meaning_id": "Ulang Tahun"
+    },
+    {
+      "no": 25,
+      "kanji": "日本",
+      "reading": "にほん",
+      "meaning_id": "Jepang"
+    },
+    {
+      "no": 26,
+      "kanji": "本",
+      "reading": "ほん",
+      "meaning_id": "Buku"
+    },
+    {
+      "no": 27,
+      "kanji": "日本語",
+      "reading": "にほんご",
+      "meaning_id": "Bahasa Jepang"
+    },
+    {
+      "no": 28,
+      "kanji": "水",
+      "reading": "みず",
+      "meaning_id": "Air"
+    },
+    {
+      "no": 29,
+      "kanji": "水道",
+      "reading": "すいどう",
+      "meaning_id": "Kran air"
+    },
+    {
+      "no": 30,
+      "kanji": "食べます",
+      "reading": "たべます",
+      "meaning_id": "Makan"
+    },
+    {
+      "no": 31,
+      "kanji": "食堂",
+      "reading": "しょくどう",
+      "meaning_id": "Kantin"
+    },
+    {
+      "no": 32,
+      "kanji": "食事",
+      "reading": "しょくじ",
+      "meaning_id": "Makan"
+    },
+    {
+      "no": 33,
+      "kanji": "飲みます",
+      "reading": "のみます",
+      "meaning_id": "Minum"
+    },
+    {
+      "no": 34,
+      "kanji": "飲み物",
+      "reading": "のみもの",
+      "meaning_id": "Minuman"
+    },
+    {
+      "no": 35,
+      "kanji": "魚",
+      "reading": "さかな",
+      "meaning_id": "Ikan"
+    },
+    {
+      "no": 36,
+      "kanji": "肉",
+      "reading": "にく",
+      "meaning_id": "Daging"
+    },
+    {
+      "no": 37,
+      "kanji": "牛肉",
+      "reading": "ぎゅうにく",
+      "meaning_id": "Daging Sapi"
+    },
+    {
+      "no": 38,
+      "kanji": "豚肉",
+      "reading": "ぶたにく",
+      "meaning_id": "Daging Babi"
+    },
+    {
+      "no": 39,
+      "kanji": "好き（な）",
+      "reading": "すき（な）",
+      "meaning_id": "Suka"
+    },
+    {
+      "no": 40,
+      "kanji": "家",
+      "reading": "いえ",
+      "meaning_id": "Rumah"
+    },
+    {
+      "no": 41,
+      "kanji": "家族",
+      "reading": "かぞく",
+      "meaning_id": "Keluarga"
+    },
+    {
+      "no": 42,
+      "kanji": "新しい",
+      "reading": "あたらしい",
+      "meaning_id": "Baru"
+    },
+    {
+      "no": 43,
+      "kanji": "広い",
+      "reading": "ひろい",
+      "meaning_id": "Luas"
+    },
+    {
+      "no": 44,
+      "kanji": "広場",
+      "reading": "ひろば",
+      "meaning_id": "Lapangan"
+    },
+    {
+      "no": 45,
+      "kanji": "古い",
+      "reading": "ふるい",
+      "meaning_id": "Lama/Kuno/Antik"
+    },
+    {
+      "no": 46,
+      "kanji": "上",
+      "reading": "うえ",
+      "meaning_id": "Atas"
+    },
+    {
+      "no": 47,
+      "kanji": "上手（な）",
+      "reading": "じょうず（な）",
+      "meaning_id": "Pandai/Mahir"
+    },
+    {
+      "no": 48,
+      "kanji": "以上",
+      "reading": "いじょう",
+      "meaning_id": "Lebih"
+    },
+    {
+      "no": 49,
+      "kanji": "下",
+      "reading": "した",
+      "meaning_id": "Bawah"
+    },
+    {
+      "no": 50,
+      "kanji": "中",
+      "reading": "なか",
+      "meaning_id": "Dalam"
+    },
+    {
+      "no": 51,
+      "kanji": "中止",
+      "reading": "ちゅうし",
+      "meaning_id": "Batal"
+    },
+    {
+      "no": 52,
+      "kanji": "3ケ月",
+      "reading": "さんかげつ",
+      "meaning_id": "3 Bulan"
+    },
+    {
+      "no": 53,
+      "kanji": "3月",
+      "reading": "さんがつ",
+      "meaning_id": "Bulan 3"
+    },
+    {
+      "no": 54,
+      "kanji": "今月",
+      "reading": "こんげつ",
+      "meaning_id": "Bulan Ini"
+    },
+    {
+      "no": 55,
+      "kanji": "正月",
+      "reading": "しょうがつ",
+      "meaning_id": "Tahun Baru"
+    },
+    {
+      "no": 56,
+      "kanji": "火曜日",
+      "reading": "かようび",
+      "meaning_id": "Hari selasa"
+    },
+    {
+      "no": 57,
+      "kanji": "木曜日",
+      "reading": "もくようび",
+      "meaning_id": "Hari kamis"
+    },
+    {
+      "no": 58,
+      "kanji": "金曜日",
+      "reading": "きんようび",
+      "meaning_id": "Hari jumat"
+    },
+    {
+      "no": 59,
+      "kanji": "お金",
+      "reading": "おかね",
+      "meaning_id": "Uang"
+    },
+    {
+      "no": 60,
+      "kanji": "料金",
+      "reading": "りょうきん",
+      "meaning_id": "Harga"
+    },
+    {
+      "no": 61,
+      "kanji": "土曜日",
+      "reading": "どようび",
+      "meaning_id": "Hari sabtu"
+    },
+    {
+      "no": 62,
+      "kanji": "朝",
+      "reading": "あさ",
+      "meaning_id": "Pagi"
+    },
+    {
+      "no": 63,
+      "kanji": "昼",
+      "reading": "ひる",
+      "meaning_id": "Siang"
+    },
+    {
+      "no": 64,
+      "kanji": "夜",
+      "reading": "よる",
+      "meaning_id": "Malam"
+    },
+    {
+      "no": 65,
+      "kanji": "時",
+      "reading": "じ",
+      "meaning_id": "Jam"
+    },
+    {
+      "no": 66,
+      "kanji": "時間",
+      "reading": "じかん",
+      "meaning_id": "Waktu"
+    },
+    {
+      "no": 67,
+      "kanji": "時計",
+      "reading": "とけい",
+      "meaning_id": "Jam Dinding"
+    },
+    {
+      "no": 68,
+      "kanji": "分",
+      "reading": "ふん",
+      "meaning_id": "Menit"
+    },
+    {
+      "no": 69,
+      "kanji": "自分",
+      "reading": "じぶん",
+      "meaning_id": "Diri Sendiri"
+    },
+    {
+      "no": 70,
+      "kanji": "分ける",
+      "reading": "わける",
+      "meaning_id": "Membagi"
+    },
+    {
+      "no": 71,
+      "kanji": "半",
+      "reading": "はん",
+      "meaning_id": "Setengah"
+    },
+    {
+      "no": 72,
+      "kanji": "枚",
+      "reading": "まい",
+      "meaning_id": "Lembar"
+    },
+    {
+      "no": 73,
+      "kanji": "読みます",
+      "reading": "よみます",
+      "meaning_id": "Membaca"
+    },
+    {
+      "no": 74,
+      "kanji": "聞きます",
+      "reading": "ききます",
+      "meaning_id": "Mendengar/Bertanya"
+    },
+    {
+      "no": 75,
+      "kanji": "見ます",
+      "reading": "みます",
+      "meaning_id": "Melihat"
+    },
+    {
+      "no": 76,
+      "kanji": "友だち",
+      "reading": "ともだち",
+      "meaning_id": "Teman"
+    },
+    {
+      "no": 77,
+      "kanji": "何",
+      "reading": "なに",
+      "meaning_id": "Apa"
+    },
+    {
+      "no": 78,
+      "kanji": "去年",
+      "reading": "きょねん",
+      "meaning_id": "Tahun Lalu"
+    },
+    {
+      "no": 79,
+      "kanji": "来年",
+      "reading": "らいねん",
+      "meaning_id": "Tahun Depan"
+    },
+    {
+      "no": 80,
+      "kanji": "今年",
+      "reading": "ことし",
+      "meaning_id": "Tahun Ini"
+    },
+    {
+      "no": 81,
+      "kanji": "昨年",
+      "reading": "さくねん",
+      "meaning_id": "Tahun Lalu"
+    },
+    {
+      "no": 82,
+      "kanji": "毎年",
+      "reading": "まいとし",
+      "meaning_id": "Setiap Tahun"
+    },
+    {
+      "no": 83,
+      "kanji": "今日",
+      "reading": "きょう",
+      "meaning_id": "Hari Ini"
+    },
+    {
+      "no": 84,
+      "kanji": "今週",
+      "reading": "こんしゅう",
+      "meaning_id": "Minggu Ini"
+    },
+    {
+      "no": 85,
+      "kanji": "今度",
+      "reading": "こんど",
+      "meaning_id": "Lain Kali"
+    },
+    {
+      "no": 86,
+      "kanji": "今",
+      "reading": "いま",
+      "meaning_id": "Sekarang"
+    },
+    {
+      "no": 87,
+      "kanji": "今月",
+      "reading": "こんげつ",
+      "meaning_id": "Bulan Ini"
+    },
+    {
+      "no": 88,
+      "kanji": "今年",
+      "reading": "ことし",
+      "meaning_id": "Tahun Ini"
+    },
+    {
+      "no": 89,
+      "kanji": "来週",
+      "reading": "らいしゅう",
+      "meaning_id": "Minggu Depan"
+    },
+    {
+      "no": 90,
+      "kanji": "先週",
+      "reading": "せんしゅう",
+      "meaning_id": "Minggu Lalu"
+    },
+    {
+      "no": 91,
+      "kanji": "週末",
+      "reading": "しゅうまつ",
+      "meaning_id": "Akhir Pekan"
+    },
+    {
+      "no": 92,
+      "kanji": "温度",
+      "reading": "おんど",
+      "meaning_id": "Suhu Temperatur"
+    },
+    {
+      "no": 93,
+      "kanji": "東",
+      "reading": "ひがし",
+      "meaning_id": "Timur"
+    },
+    {
+      "no": 94,
+      "kanji": "東京",
+      "reading": "とうきょう",
+      "meaning_id": "Tokyo"
+    },
+    {
+      "no": 95,
+      "kanji": "西",
+      "reading": "にし",
+      "meaning_id": "Barat"
+    },
+    {
+      "no": 96,
+      "kanji": "南",
+      "reading": "みなみ",
+      "meaning_id": "Selatan"
+    },
+    {
+      "no": 97,
+      "kanji": "北",
+      "reading": "きた",
+      "meaning_id": "Utara"
+    },
+    {
+      "no": 98,
+      "kanji": "会社",
+      "reading": "かいしゃ",
+      "meaning_id": "Perusahaan"
+    },
+    {
+      "no": 99,
+      "kanji": "会います",
+      "reading": "あいます",
+      "meaning_id": "Bertemu"
+    },
+    {
+      "no": 100,
+      "kanji": "会計",
+      "reading": "かいけい",
+      "meaning_id": "Total (Bill)"
+    },
+    {
+      "no": 101,
+      "kanji": "会場",
+      "reading": "かいじょう",
+      "meaning_id": "Tempat Pertemuan"
+    },
+    {
+      "no": 102,
+      "kanji": "神社",
+      "reading": "じんじゃ",
+      "meaning_id": "Kuil"
+    },
+    {
+      "no": 103,
+      "kanji": "来ます",
+      "reading": "きます",
+      "meaning_id": "Datang"
+    },
+    {
+      "no": 104,
+      "kanji": "来年",
+      "reading": "らいねん",
+      "meaning_id": "Tahun Depan"
+    },
+    {
+      "no": 105,
+      "kanji": "行きます",
+      "reading": "いきます",
+      "meaning_id": "Pergi"
+    },
+    {
+      "no": 106,
+      "kanji": "旅行します",
+      "reading": "りょこうします",
+      "meaning_id": "Traveling/Jalan-jalan/Tamasya"
+    },
+    {
+      "no": 107,
+      "kanji": "銀行",
+      "reading": "ぎんこう",
+      "meaning_id": "Bank"
+    },
+    {
+      "no": 108,
+      "kanji": "持って行く",
+      "reading": "もっていく",
+      "meaning_id": "Membawa Pergi"
+    },
+    {
+      "no": 109,
+      "kanji": "乗ります",
+      "reading": "のります",
+      "meaning_id": "Naik"
+    },
+    {
+      "no": 110,
+      "kanji": "大きい",
+      "reading": "おおきい",
+      "meaning_id": "Besar"
+    },
+    {
+      "no": 111,
+      "kanji": "大学",
+      "reading": "だいがく",
+      "meaning_id": "Universitas"
+    },
+    {
+      "no": 112,
+      "kanji": "大人",
+      "reading": "おとな",
+      "meaning_id": "Dewasa"
+    },
+    {
+      "no": 113,
+      "kanji": "大切（な）",
+      "reading": "たいせつ（な）",
+      "meaning_id": "Penting/Berharga"
+    },
+    {
+      "no": 114,
+      "kanji": "大変（な）",
+      "reading": "たいへん（な）",
+      "meaning_id": "Berat/Sangat"
+    },
+    {
+      "no": 115,
+      "kanji": "小さい",
+      "reading": "ちいさい",
+      "meaning_id": "Kecil"
+    },
+    {
+      "no": 116,
+      "kanji": "高い",
+      "reading": "たかい",
+      "meaning_id": "Tinggi"
+    },
+    {
+      "no": 117,
+      "kanji": "高校",
+      "reading": "こうこう",
+      "meaning_id": "SMA"
+    },
+    {
+      "no": 118,
+      "kanji": "低い",
+      "reading": "ひくい",
+      "meaning_id": "Rendah"
+    },
+    {
+      "no": 119,
+      "kanji": "後ろ",
+      "reading": "うしろ",
+      "meaning_id": "Belakang"
+    },
+    {
+      "no": 120,
+      "kanji": "午後",
+      "reading": "ごご",
+      "meaning_id": "PM"
+    },
+    {
+      "no": 121,
+      "kanji": "横",
+      "reading": "よこ",
+      "meaning_id": "Di Samping"
+    },
+    {
+      "no": 122,
+      "kanji": "入口",
+      "reading": "いりぐち",
+      "meaning_id": "Pintu Masuk"
+    },
+    {
+      "no": 123,
+      "kanji": "入ります",
+      "reading": "はいります",
+      "meaning_id": "Masuk"
+    },
+    {
+      "no": 124,
+      "kanji": "記入する",
+      "reading": "きにゅうする",
+      "meaning_id": "Mengisi (Menulis Formulis dll)"
+    },
+    {
+      "no": 125,
+      "kanji": "入れる",
+      "reading": "いれる",
+      "meaning_id": "Memasukan"
+    },
+    {
+      "no": 126,
+      "kanji": "入院する",
+      "reading": "にゅういんする",
+      "meaning_id": "Masuk (dirawat) Di Rumah Sakit"
+    },
+    {
+      "no": 127,
+      "kanji": "入力する",
+      "reading": "にゅうりょくする",
+      "meaning_id": "Menginput (Data,Informasi dll)"
+    },
+    {
+      "no": 128,
+      "kanji": "出口",
+      "reading": "でぐち",
+      "meaning_id": "Pintu Keluar"
+    },
+    {
+      "no": 129,
+      "kanji": "口",
+      "reading": "くち",
+      "meaning_id": "Mulut"
+    },
+    {
+      "no": 130,
+      "kanji": "窓口",
+      "reading": "まどぐち",
+      "meaning_id": "Loket Informasi"
+    },
+    {
+      "no": 131,
+      "kanji": "出かける",
+      "reading": "でかける",
+      "meaning_id": "Keluar"
+    },
+    {
+      "no": 132,
+      "kanji": "出発する",
+      "reading": "しゅっぱつする",
+      "meaning_id": "Keberangkatan"
+    },
+    {
+      "no": 133,
+      "kanji": "出す",
+      "reading": "だす",
+      "meaning_id": "Mengeluarkan/Mengumpulkan"
+    },
+    {
+      "no": 134,
+      "kanji": "～階",
+      "reading": "～かい",
+      "meaning_id": "Lantai～"
+    },
+    {
+      "no": 135,
+      "kanji": "押す",
+      "reading": "おす",
+      "meaning_id": "Menekan"
+    },
+    {
+      "no": 136,
+      "kanji": "引く",
+      "reading": "ひく",
+      "meaning_id": "Menarik"
+    },
+    {
+      "no": 137,
+      "kanji": "安い",
+      "reading": "やすい",
+      "meaning_id": "Murah"
+    },
+    {
+      "no": 138,
+      "kanji": "一",
+      "reading": "いち",
+      "meaning_id": "1"
+    },
+    {
+      "no": 139,
+      "kanji": "二",
+      "reading": "に",
+      "meaning_id": "2"
+    },
+    {
+      "no": 140,
+      "kanji": "三",
+      "reading": "さん",
+      "meaning_id": "3"
+    },
+    {
+      "no": 141,
+      "kanji": "四",
+      "reading": "よん",
+      "meaning_id": "4"
+    },
+    {
+      "no": 142,
+      "kanji": "五",
+      "reading": "ご",
+      "meaning_id": "5"
+    },
+    {
+      "no": 143,
+      "kanji": "六",
+      "reading": "ろく",
+      "meaning_id": "6"
+    },
+    {
+      "no": 144,
+      "kanji": "七",
+      "reading": "なな",
+      "meaning_id": "7"
+    },
+    {
+      "no": 145,
+      "kanji": "八",
+      "reading": "はち",
+      "meaning_id": "8"
+    },
+    {
+      "no": 146,
+      "kanji": "九",
+      "reading": "きゅう",
+      "meaning_id": "9"
+    },
+    {
+      "no": 147,
+      "kanji": "十",
+      "reading": "じゅう",
+      "meaning_id": "10"
+    },
+    {
+      "no": 148,
+      "kanji": "百",
+      "reading": "ひゃく",
+      "meaning_id": "100"
+    },
+    {
+      "no": 149,
+      "kanji": "千",
+      "reading": "せん",
+      "meaning_id": "1000"
+    },
+    {
+      "no": 150,
+      "kanji": "万",
+      "reading": "まん",
+      "meaning_id": "10000"
+    },
+    {
+      "no": 151,
+      "kanji": "～円",
+      "reading": "～えん",
+      "meaning_id": "～Yen (Mata Uang Jepang)"
+    },
+    {
+      "no": 152,
+      "kanji": "休み",
+      "reading": "やすみ",
+      "meaning_id": "Istirahat/Libur"
+    },
+    {
+      "no": 153,
+      "kanji": "映画",
+      "reading": "えいが",
+      "meaning_id": "Film/Movie"
+    },
+    {
+      "no": 154,
+      "kanji": "計画",
+      "reading": "けいかく",
+      "meaning_id": "Rencana"
+    },
+    {
+      "no": 155,
+      "kanji": "日本語",
+      "reading": "にほんご",
+      "meaning_id": "Bahasa Jepang"
+    },
+    {
+      "no": 156,
+      "kanji": "英語",
+      "reading": "えいご",
+      "meaning_id": "Bahasa Inggris"
+    },
+    {
+      "no": 157,
+      "kanji": "勉強します",
+      "reading": "べんきょうします",
+      "meaning_id": "Belajar"
+    },
+    {
+      "no": 158,
+      "kanji": "強い",
+      "reading": "つよい",
+      "meaning_id": "Kuat"
+    },
+    {
+      "no": 159,
+      "kanji": "買います",
+      "reading": "かいます",
+      "meaning_id": "Membeli"
+    },
+    {
+      "no": 160,
+      "kanji": "温泉",
+      "reading": "おんせん",
+      "meaning_id": "Pemandian air panas alami"
+    },
+    {
+      "no": 161,
+      "kanji": "予定",
+      "reading": "よてい",
+      "meaning_id": "Jadwal"
+    },
+    {
+      "no": 162,
+      "kanji": "予約",
+      "reading": "よやく",
+      "meaning_id": "Memesan/Booking (Hotel.Restaurant dll)"
+    },
+    {
+      "no": 163,
+      "kanji": "指定席",
+      "reading": "していせき",
+      "meaning_id": "Kursi Yang Telah Di Pesan (Kereta, Pesawat dll)"
+    },
+    {
+      "no": 164,
+      "kanji": "設定する",
+      "reading": "せっていする",
+      "meaning_id": "Mengatur/Mensetting"
+    },
+    {
+      "no": 165,
+      "kanji": "旅行します",
+      "reading": "りょこうします",
+      "meaning_id": "Traveling/Jalan-jalan/Tamasya"
+    },
+    {
+      "no": 166,
+      "kanji": "旅館",
+      "reading": "りょかん",
+      "meaning_id": "Penginapan Ala Jepang (Tradisional)"
+    },
+    {
+      "no": 167,
+      "kanji": "学生",
+      "reading": "がくせい",
+      "meaning_id": "Pelajar"
+    },
+    {
+      "no": 168,
+      "kanji": "学校",
+      "reading": "がっこう",
+      "meaning_id": "Sekolah"
+    },
+    {
+      "no": 169,
+      "kanji": "大学",
+      "reading": "だいがく",
+      "meaning_id": "Universitas"
+    },
+    {
+      "no": 170,
+      "kanji": "留学する",
+      "reading": "りゅうがくする",
+      "meaning_id": "Belajar Di Luar Negeri"
+    },
+    {
+      "no": 171,
+      "kanji": "生活",
+      "reading": "せいかつ",
+      "meaning_id": "Kehidupan"
+    },
+    {
+      "no": 172,
+      "kanji": "誕生日",
+      "reading": "たんじょうび",
+      "meaning_id": "Ulang Tahun"
+    },
+    {
+      "no": 173,
+      "kanji": "生まれる",
+      "reading": "うまれる",
+      "meaning_id": "Lahir"
+    },
+    {
+      "no": 174,
+      "kanji": "生",
+      "reading": "なま",
+      "meaning_id": "Mentah"
+    },
+    {
+      "no": 175,
+      "kanji": "生産する",
+      "reading": "せいさんする",
+      "meaning_id": "Memproduksi"
+    },
+    {
+      "no": 176,
+      "kanji": "学校",
+      "reading": "がっこう",
+      "meaning_id": "Sekolah"
+    },
+    {
+      "no": 177,
+      "kanji": "高校",
+      "reading": "こうこう",
+      "meaning_id": "SMA"
+    },
+    {
+      "no": 178,
+      "kanji": "生活",
+      "reading": "せいかつ",
+      "meaning_id": "Kehidupan"
+    },
+    {
+      "no": 179,
+      "kanji": "去年",
+      "reading": "きょねん",
+      "meaning_id": "Tahun Lalu"
+    },
+    {
+      "no": 180,
+      "kanji": "先週",
+      "reading": "せんしゅう",
+      "meaning_id": "Minggu Lalu"
+    },
+    {
+      "no": 181,
+      "kanji": "先生",
+      "reading": "せんせい",
+      "meaning_id": "Guru/Pengajar/Profesional"
+    },
+    {
+      "no": 182,
+      "kanji": "連絡先",
+      "reading": "れんらくさき",
+      "meaning_id": "Nomor Yang Dapat Di Hubungi (Kontak)"
+    },
+    {
+      "no": 183,
+      "kanji": "仕事",
+      "reading": "しごと",
+      "meaning_id": "Pekerjaan"
+    },
+    {
+      "no": 184,
+      "kanji": "食事",
+      "reading": "しょくじ",
+      "meaning_id": "Makan"
+    },
+    {
+      "no": 185,
+      "kanji": "用事",
+      "reading": "ようじ",
+      "meaning_id": "Urusan"
+    },
+    {
+      "no": 186,
+      "kanji": "工事",
+      "reading": "こうじ",
+      "meaning_id": "Pekerjaan Kontruksi"
+    },
+    {
+      "no": 187,
+      "kanji": "元気（な）",
+      "reading": "げんき（な）",
+      "meaning_id": "Sehat/Bugar"
+    },
+    {
+      "no": 188,
+      "kanji": "天気",
+      "reading": "てんき",
+      "meaning_id": "Cuaca"
+    },
+    {
+      "no": 189,
+      "kanji": "電気",
+      "reading": "でんき",
+      "meaning_id": "Listrik/Lampu"
+    },
+    {
+      "no": 190,
+      "kanji": "病気",
+      "reading": "びょうき",
+      "meaning_id": "Sakit"
+    },
+    {
+      "no": 191,
+      "kanji": "忙しい",
+      "reading": "いそがしい",
+      "meaning_id": "Sibuk/Terburu-buru"
+    },
+    {
+      "no": 192,
+      "kanji": "働く",
+      "reading": "はたらく",
+      "meaning_id": "Bekerja"
+    },
+    {
+      "no": 193,
+      "kanji": "作る",
+      "reading": "つくる",
+      "meaning_id": "Membuat"
+    },
+    {
+      "no": 194,
+      "kanji": "人",
+      "reading": "ひと",
+      "meaning_id": "Orang"
+    },
+    {
+      "no": 195,
+      "kanji": "大人",
+      "reading": "おとな",
+      "meaning_id": "Dewasa"
+    },
+    {
+      "no": 196,
+      "kanji": "犬",
+      "reading": "いぬ",
+      "meaning_id": "Anjing"
+    },
+    {
+      "no": 197,
+      "kanji": "家族",
+      "reading": "かぞく",
+      "meaning_id": "Keluarga"
+    },
+    {
+      "no": 198,
+      "kanji": "夕方",
+      "reading": "ゆうがた",
+      "meaning_id": "Sore"
+    },
+    {
+      "no": 199,
+      "kanji": "調理方法",
+      "reading": "ちょうりほうほう",
+      "meaning_id": "Resep Makanan"
+    },
+    {
+      "no": 200,
+      "kanji": "方",
+      "reading": "かた",
+      "meaning_id": "Cara"
+    },
+    {
+      "no": 201,
+      "kanji": "英語",
+      "reading": "えいご",
+      "meaning_id": "Bahasa Inggris"
+    },
+    {
+      "no": 202,
+      "kanji": "音",
+      "reading": "おと",
+      "meaning_id": "Suara (Yang Bukan Dari Mulut)"
+    },
+    {
+      "no": 203,
+      "kanji": "音楽",
+      "reading": "おんがく",
+      "meaning_id": "Lagu/Musik"
+    },
+    {
+      "no": 204,
+      "kanji": "楽しい",
+      "reading": "たのしい",
+      "meaning_id": "Menyenangkan"
+    },
+    {
+      "no": 205,
+      "kanji": "習う",
+      "reading": "ならう",
+      "meaning_id": "Belajar (Ke Seseorang)"
+    },
+    {
+      "no": 206,
+      "kanji": "練習",
+      "reading": "れんしゅう",
+      "meaning_id": "Berlatih/Latihan"
+    },
+    {
+      "no": 207,
+      "kanji": "習慣",
+      "reading": "しゅうかん",
+      "meaning_id": "Kebiasaan/Adat Istiadat"
+    },
+    {
+      "no": 208,
+      "kanji": "話す",
+      "reading": "はなす",
+      "meaning_id": "Berbicara/Berbincang"
+    },
+    {
+      "no": 209,
+      "kanji": "電話番号",
+      "reading": "でんわばんごう",
+      "meaning_id": "Nomor Telepon"
+    },
+    {
+      "no": 210,
+      "kanji": "季節",
+      "reading": "きせつ",
+      "meaning_id": "Musim"
+    },
+    {
+      "no": 211,
+      "kanji": "春",
+      "reading": "はる",
+      "meaning_id": "Musim Semi"
+    },
+    {
+      "no": 212,
+      "kanji": "夏",
+      "reading": "なつ",
+      "meaning_id": "Musim Panas"
+    },
+    {
+      "no": 213,
+      "kanji": "秋",
+      "reading": "あき",
+      "meaning_id": "Musim Gugur"
+    },
+    {
+      "no": 214,
+      "kanji": "冬",
+      "reading": "ふゆ",
+      "meaning_id": "Musim Dingin"
+    },
+    {
+      "no": 215,
+      "kanji": "花",
+      "reading": "はな",
+      "meaning_id": "Bunga"
+    },
+    {
+      "no": 216,
+      "kanji": "同じ",
+      "reading": "おなじ",
+      "meaning_id": "Sama"
+    },
+    {
+      "no": 217,
+      "kanji": "暑い",
+      "reading": "あつい",
+      "meaning_id": "Panas (Cuaca)"
+    },
+    {
+      "no": 218,
+      "kanji": "寒い",
+      "reading": "さむい",
+      "meaning_id": "Dingin (Cuaca)"
+    },
+    {
+      "no": 219,
+      "kanji": "天気",
+      "reading": "てんき",
+      "meaning_id": "Cuaca"
+    },
+    {
+      "no": 220,
+      "kanji": "晴れ",
+      "reading": "はれ",
+      "meaning_id": "Cuaca Cerah"
+    },
+    {
+      "no": 221,
+      "kanji": "雨",
+      "reading": "あめ",
+      "meaning_id": "Hujan"
+    },
+    {
+      "no": 222,
+      "kanji": "雪",
+      "reading": "ゆき",
+      "meaning_id": "Salju"
+    },
+    {
+      "no": 223,
+      "kanji": "風",
+      "reading": "かぜ",
+      "meaning_id": "Angin"
+    },
+    {
+      "no": 224,
+      "kanji": "台風",
+      "reading": "たいふう",
+      "meaning_id": "Topan"
+    },
+    {
+      "no": 225,
+      "kanji": "昨日",
+      "reading": "きのう",
+      "meaning_id": "Kemarin"
+    },
+    {
+      "no": 226,
+      "kanji": "昨年",
+      "reading": "さくねん",
+      "meaning_id": "Tahun Lalu"
+    },
+    {
+      "no": 227,
+      "kanji": "明日",
+      "reading": "あした",
+      "meaning_id": "Besok"
+    },
+    {
+      "no": 228,
+      "kanji": "説明する",
+      "reading": "せつめいする",
+      "meaning_id": "Menjelaskan"
+    },
+    {
+      "no": 229,
+      "kanji": "明るい",
+      "reading": "あかるい",
+      "meaning_id": "Terang"
+    },
+    {
+      "no": 230,
+      "kanji": "毎日",
+      "reading": "まいにち",
+      "meaning_id": "Setiap Hari"
+    },
+    {
+      "no": 231,
+      "kanji": "毎年",
+      "reading": "まいとし",
+      "meaning_id": "Setiap Tahun"
+    },
+    {
+      "no": 232,
+      "kanji": "町",
+      "reading": "まち",
+      "meaning_id": "Kota"
+    },
+    {
+      "no": 233,
+      "kanji": "店",
+      "reading": "みせ",
+      "meaning_id": "Toko"
+    },
+    {
+      "no": 234,
+      "kanji": "店長",
+      "reading": "てんちょう",
+      "meaning_id": "Kepala Toko"
+    },
+    {
+      "no": 235,
+      "kanji": "店員",
+      "reading": "てんいん",
+      "meaning_id": "Pegawai Toko"
+    },
+    {
+      "no": 236,
+      "kanji": "食堂",
+      "reading": "しょくどう",
+      "meaning_id": "Kantin"
+    },
+    {
+      "no": 237,
+      "kanji": "便利（な）",
+      "reading": "べんり（な）",
+      "meaning_id": "Praktis"
+    },
+    {
+      "no": 238,
+      "kanji": "不便（な）",
+      "reading": "ふべん（な）",
+      "meaning_id": "Tidak Praktis"
+    },
+    {
+      "no": 239,
+      "kanji": "郵便局",
+      "reading": "ゆうびんきょく",
+      "meaning_id": "Kantor Pos"
+    },
+    {
+      "no": 240,
+      "kanji": "便利（な）",
+      "reading": "べんり（な）",
+      "meaning_id": "Praktis"
+    },
+    {
+      "no": 241,
+      "kanji": "利用する",
+      "reading": "りようする",
+      "meaning_id": "Menggunakan (Fasilitas)"
+    },
+    {
+      "no": 242,
+      "kanji": "不便（な）",
+      "reading": "ふべん（な）",
+      "meaning_id": "Tidak Praktis"
+    },
+    {
+      "no": 243,
+      "kanji": "静か（な）",
+      "reading": "しずか（な）",
+      "meaning_id": "Sunyi/Tenang"
+    },
+    {
+      "no": 244,
+      "kanji": "有名（な）",
+      "reading": "ゆうめい（な）",
+      "meaning_id": "Terkenal"
+    },
+    {
+      "no": 245,
+      "kanji": "多い",
+      "reading": "おおい",
+      "meaning_id": "Banyak"
+    },
+    {
+      "no": 246,
+      "kanji": "少ない",
+      "reading": "すくない",
+      "meaning_id": "Sedikit"
+    },
+    {
+      "no": 247,
+      "kanji": "少し",
+      "reading": "すこし",
+      "meaning_id": "Sedikit"
+    },
+    {
+      "no": 248,
+      "kanji": "遠い",
+      "reading": "とおい",
+      "meaning_id": "Jauh"
+    },
+    {
+      "no": 249,
+      "kanji": "道",
+      "reading": "みち",
+      "meaning_id": "Jalan"
+    },
+    {
+      "no": 250,
+      "kanji": "道具",
+      "reading": "どうぐ",
+      "meaning_id": "Alat"
+    },
+    {
+      "no": 251,
+      "kanji": "公園",
+      "reading": "こうえん",
+      "meaning_id": "Taman"
+    },
+    {
+      "no": 252,
+      "kanji": "動物園",
+      "reading": "どうぶつえん",
+      "meaning_id": "Kebun Binatang"
+    },
+    {
+      "no": 253,
+      "kanji": "銀行",
+      "reading": "ぎんこう",
+      "meaning_id": "Bank"
+    },
+    {
+      "no": 254,
+      "kanji": "お寺",
+      "reading": "おてら",
+      "meaning_id": "Kuil"
+    },
+    {
+      "no": 255,
+      "kanji": "神社",
+      "reading": "じんじゃ",
+      "meaning_id": "Kuil"
+    },
+    {
+      "no": 256,
+      "kanji": "右",
+      "reading": "みぎ",
+      "meaning_id": "Kanan"
+    },
+    {
+      "no": 257,
+      "kanji": "左",
+      "reading": "ひだり",
+      "meaning_id": "Kiri"
+    },
+    {
+      "no": 258,
+      "kanji": "近く",
+      "reading": "ちかく",
+      "meaning_id": "Dekat"
+    },
+    {
+      "no": 259,
+      "kanji": "近所",
+      "reading": "きんじょ",
+      "meaning_id": "Tetangga/Sekitar Rumah"
+    },
+    {
+      "no": 260,
+      "kanji": "最近",
+      "reading": "さいきん",
+      "meaning_id": "Akhir-akhir ini"
+    },
+    {
+      "no": 261,
+      "kanji": "車",
+      "reading": "くるま",
+      "meaning_id": "Mobil"
+    },
+    {
+      "no": 262,
+      "kanji": "電車",
+      "reading": "でんしゃ",
+      "meaning_id": "Kereta"
+    },
+    {
+      "no": 263,
+      "kanji": "自転車",
+      "reading": "じてんしゃ",
+      "meaning_id": "Sepeda"
+    },
+    {
+      "no": 264,
+      "kanji": "送る",
+      "reading": "おくる",
+      "meaning_id": "Mengirim (Benda/Orang)"
+    },
+    {
+      "no": 265,
+      "kanji": "時間",
+      "reading": "じかん",
+      "meaning_id": "Waktu"
+    },
+    {
+      "no": 266,
+      "kanji": "場所",
+      "reading": "ばしょ",
+      "meaning_id": "Tempat"
+    },
+    {
+      "no": 267,
+      "kanji": "広場",
+      "reading": "ひろば",
+      "meaning_id": "Lapangan/Area Luas"
+    },
+    {
+      "no": 268,
+      "kanji": "場合",
+      "reading": "ばあい",
+      "meaning_id": "Saat/Dalam Situasi"
+    },
+    {
+      "no": 269,
+      "kanji": "会場",
+      "reading": "かいじょう",
+      "meaning_id": "Tempat Pertemuan"
+    },
+    {
+      "no": 270,
+      "kanji": "住所",
+      "reading": "じゅうしょ",
+      "meaning_id": "Alamat"
+    },
+    {
+      "no": 271,
+      "kanji": "近所",
+      "reading": "きんじょ",
+      "meaning_id": "Tetangga/Sekitar Rumah"
+    },
+    {
+      "no": 272,
+      "kanji": "駅",
+      "reading": "えき",
+      "meaning_id": "Stasiun"
+    },
+    {
+      "no": 273,
+      "kanji": "受付",
+      "reading": "うけつけ",
+      "meaning_id": "Meja Informasi"
+    },
+    {
+      "no": 274,
+      "kanji": "門",
+      "reading": "もん",
+      "meaning_id": "Gerbang"
+    },
+    {
+      "no": 275,
+      "kanji": "電車",
+      "reading": "でんしゃ",
+      "meaning_id": "Kereta"
+    },
+    {
+      "no": 276,
+      "kanji": "電気",
+      "reading": "でんき",
+      "meaning_id": "Listrik/Lampu"
+    },
+    {
+      "no": 277,
+      "kanji": "電話番号",
+      "reading": "でんわばんごう",
+      "meaning_id": "Nomor Telepon"
+    },
+    {
+      "no": 278,
+      "kanji": "待つ",
+      "reading": "まつ",
+      "meaning_id": "Menunggu"
+    },
+    {
+      "no": 279,
+      "kanji": "止まる",
+      "reading": "とまる",
+      "meaning_id": "Berhenti/Menginap"
+    },
+    {
+      "no": 280,
+      "kanji": "中止",
+      "reading": "ちゅうし",
+      "meaning_id": "Batal"
+    },
+    {
+      "no": 281,
+      "kanji": "禁止",
+      "reading": "きんし",
+      "meaning_id": "Larangan/Dilarang"
+    },
+    {
+      "no": 282,
+      "kanji": "着く",
+      "reading": "つく",
+      "meaning_id": "Tiba (Sampai Di Suatu Tempat)"
+    },
+    {
+      "no": 283,
+      "kanji": "着る",
+      "reading": "きる",
+      "meaning_id": "Memakai (Baju, Pakaian Dll)"
+    },
+    {
+      "no": 284,
+      "kanji": "到着する",
+      "reading": "とうちゃくする",
+      "meaning_id": "Kedatangan"
+    },
+    {
+      "no": 285,
+      "kanji": "急ぐ",
+      "reading": "いそぐ",
+      "meaning_id": "Terburu-buru"
+    },
+    {
+      "no": 286,
+      "kanji": "急に",
+      "reading": "きゅうに",
+      "meaning_id": "Tiba-tiba"
+    },
+    {
+      "no": 287,
+      "kanji": "博物館",
+      "reading": "はくぶつかん",
+      "meaning_id": "Museum"
+    },
+    {
+      "no": 288,
+      "kanji": "動物園",
+      "reading": "どうぶつえん",
+      "meaning_id": "Kebun Binatang"
+    },
+    {
+      "no": 289,
+      "kanji": "飲み物",
+      "reading": "のみもの",
+      "meaning_id": "Minuman"
+    },
+    {
+      "no": 290,
+      "kanji": "図書館",
+      "reading": "としょかん",
+      "meaning_id": "Perpustakaan"
+    },
+    {
+      "no": 291,
+      "kanji": "動物園",
+      "reading": "どうぶつえん",
+      "meaning_id": "Kebun Binatang"
+    },
+    {
+      "no": 292,
+      "kanji": "動く",
+      "reading": "うごく",
+      "meaning_id": "Bergerak"
+    },
+    {
+      "no": 293,
+      "kanji": "運動する",
+      "reading": "うんどうする",
+      "meaning_id": "Berolah Raga"
+    },
+    {
+      "no": 294,
+      "kanji": "試合",
+      "reading": "しあい",
+      "meaning_id": "Pertandingan"
+    },
+    {
+      "no": 295,
+      "kanji": "都合",
+      "reading": "つごう",
+      "meaning_id": "Keadaan"
+    },
+    {
+      "no": 296,
+      "kanji": "合格する",
+      "reading": "ごうかくする",
+      "meaning_id": "Lulus"
+    },
+    {
+      "no": 297,
+      "kanji": "場合",
+      "reading": "ばあい",
+      "meaning_id": "Saat/Dalam Situasi"
+    },
+    {
+      "no": 298,
+      "kanji": "難しい",
+      "reading": "むずかしい",
+      "meaning_id": "Sulit"
+    },
+    {
+      "no": 299,
+      "kanji": "登る",
+      "reading": "のぼる",
+      "meaning_id": "Mendaki"
+    },
+    {
+      "no": 300,
+      "kanji": "練習",
+      "reading": "れんしゅう",
+      "meaning_id": "Berlatih/Latihan"
+    },
+    {
+      "no": 301,
+      "kanji": "漢字",
+      "reading": "かんじ",
+      "meaning_id": "Kanji"
+    },
+    {
+      "no": 302,
+      "kanji": "数字",
+      "reading": "すうじ",
+      "meaning_id": "Angka"
+    },
+    {
+      "no": 303,
+      "kanji": "無料",
+      "reading": "むりょう",
+      "meaning_id": "Gratis"
+    },
+    {
+      "no": 304,
+      "kanji": "材料",
+      "reading": "ざいりょう",
+      "meaning_id": "Bahan"
+    },
+    {
+      "no": 305,
+      "kanji": "料理",
+      "reading": "りょうり",
+      "meaning_id": "Masak"
+    },
+    {
+      "no": 306,
+      "kanji": "料金",
+      "reading": "りょうきん",
+      "meaning_id": "Harga"
+    },
+    {
+      "no": 307,
+      "kanji": "言う",
+      "reading": "いう",
+      "meaning_id": "Mengatakan"
+    },
+    {
+      "no": 308,
+      "kanji": "書く",
+      "reading": "かく",
+      "meaning_id": "Menulis"
+    },
+    {
+      "no": 309,
+      "kanji": "教科書",
+      "reading": "きょうかしょ",
+      "meaning_id": "Buku Pelajaran"
+    },
+    {
+      "no": 310,
+      "kanji": "図書館",
+      "reading": "としょかん",
+      "meaning_id": "Perpustakaan"
+    },
+    {
+      "no": 311,
+      "kanji": "貸す",
+      "reading": "かす",
+      "meaning_id": "Meminjamkan"
+    },
+    {
+      "no": 312,
+      "kanji": "教える",
+      "reading": "おしえる",
+      "meaning_id": "Mengajarkan/Memberitahu"
+    },
+    {
+      "no": 313,
+      "kanji": "教科書",
+      "reading": "きょうかしょ",
+      "meaning_id": "Buku Pelajaran"
+    },
+    {
+      "no": 314,
+      "kanji": "教室",
+      "reading": "きょうしつ",
+      "meaning_id": "Ruang Kelas"
+    },
+    {
+      "no": 315,
+      "kanji": "説明する",
+      "reading": "せつめいする",
+      "meaning_id": "Menjelaskan"
+    },
+    {
+      "no": 316,
+      "kanji": "午前",
+      "reading": "ごぜん",
+      "meaning_id": "AM"
+    },
+    {
+      "no": 317,
+      "kanji": "午後",
+      "reading": "ごご",
+      "meaning_id": "PM"
+    },
+    {
+      "no": 318,
+      "kanji": "教科書",
+      "reading": "きょうかしょ",
+      "meaning_id": "Buku Pelajaran"
+    },
+    {
+      "no": 319,
+      "kanji": "教室",
+      "reading": "きょうしつ",
+      "meaning_id": "Ruang Kelas"
+    },
+    {
+      "no": 320,
+      "kanji": "全部",
+      "reading": "ぜんぶ",
+      "meaning_id": "Semuanya"
+    },
+    {
+      "no": 321,
+      "kanji": "全員",
+      "reading": "ぜんいん",
+      "meaning_id": "Semua Orang"
+    },
+    {
+      "no": 322,
+      "kanji": "全部",
+      "reading": "ぜんぶ",
+      "meaning_id": "Semuanya"
+    },
+    {
+      "no": 323,
+      "kanji": "回",
+      "reading": "かい",
+      "meaning_id": "Kali"
+    },
+    {
+      "no": 324,
+      "kanji": "参加する",
+      "reading": "さんかする",
+      "meaning_id": "Bergabung/Berpartisipasi"
+    },
+    {
+      "no": 325,
+      "kanji": "用事",
+      "reading": "ようじ",
+      "meaning_id": "Urusan"
+    },
+    {
+      "no": 326,
+      "kanji": "利用する",
+      "reading": "りようする",
+      "meaning_id": "Menggunakan (Fasilitas)"
+    },
+    {
+      "no": 327,
+      "kanji": "用意する",
+      "reading": "よういする",
+      "meaning_id": "Mempersiapkan"
+    },
+    {
+      "no": 328,
+      "kanji": "意味",
+      "reading": "いみ",
+      "meaning_id": "Arti"
+    },
+    {
+      "no": 329,
+      "kanji": "お茶",
+      "reading": "おちゃ",
+      "meaning_id": "Teh Jepang"
+    },
+    {
+      "no": 330,
+      "kanji": "お酒",
+      "reading": "おさけ",
+      "meaning_id": "Osake"
+    },
+    {
+      "no": 331,
+      "kanji": "材料",
+      "reading": "ざいりょう",
+      "meaning_id": "Bahan"
+    },
+    {
+      "no": 332,
+      "kanji": "野菜",
+      "reading": "やさい",
+      "meaning_id": "Sayur-sayuran"
+    },
+    {
+      "no": 333,
+      "kanji": "牛肉",
+      "reading": "ぎゅうにく",
+      "meaning_id": "Daging Sapi"
+    },
+    {
+      "no": 334,
+      "kanji": "牛乳",
+      "reading": "ぎゅうにゅう",
+      "meaning_id": "Susu Sapi"
+    },
+    {
+      "no": 335,
+      "kanji": "豚肉",
+      "reading": "ぶたにく",
+      "meaning_id": "Daging Babi"
+    },
+    {
+      "no": 336,
+      "kanji": "皿",
+      "reading": "さら",
+      "meaning_id": "Piring"
+    },
+    {
+      "no": 337,
+      "kanji": "売る",
+      "reading": "うる",
+      "meaning_id": "Menjual"
+    },
+    {
+      "no": 338,
+      "kanji": "持って行く",
+      "reading": "もっていく",
+      "meaning_id": "Membawa Pergi"
+    },
+    {
+      "no": 339,
+      "kanji": "卵",
+      "reading": "たまご",
+      "meaning_id": "Telur"
+    },
+    {
+      "no": 340,
+      "kanji": "料理",
+      "reading": "りょうり",
+      "meaning_id": "Masakan"
+    },
+    {
+      "no": 341,
+      "kanji": "理由",
+      "reading": "りゆう",
+      "meaning_id": "Alasan"
+    },
+    {
+      "no": 342,
+      "kanji": "お湯",
+      "reading": "おゆ",
+      "meaning_id": "Air Panas"
+    },
+    {
+      "no": 343,
+      "kanji": "調べる",
+      "reading": "しらべる",
+      "meaning_id": "Mencari/Menyelidiki"
+    },
+    {
+      "no": 344,
+      "kanji": "味",
+      "reading": "あじ",
+      "meaning_id": "Rasa"
+    },
+    {
+      "no": 345,
+      "kanji": "意味",
+      "reading": "いみ",
+      "meaning_id": "Arti"
+    },
+    {
+      "no": 346,
+      "kanji": "甘い",
+      "reading": "あまい",
+      "meaning_id": "Manis"
+    },
+    {
+      "no": 347,
+      "kanji": "辛い",
+      "reading": "からい",
+      "meaning_id": "Pedas"
+    },
+    {
+      "no": 348,
+      "kanji": "苦手（な）",
+      "reading": "にがて（な）",
+      "meaning_id": "Tidak Pandai"
+    },
+    {
+      "no": 349,
+      "kanji": "苦労する",
+      "reading": "くろうする",
+      "meaning_id": "Kesulitan (Situasi Sulit)"
+    },
+    {
+      "no": 350,
+      "kanji": "手",
+      "reading": "て",
+      "meaning_id": "Tangan"
+    },
+    {
+      "no": 351,
+      "kanji": "歌手",
+      "reading": "かしゅ",
+      "meaning_id": "Penyanyi"
+    },
+    {
+      "no": 352,
+      "kanji": "上手（な）",
+      "reading": "じょうず（な）",
+      "meaning_id": "Pandai/Mahir"
+    },
+    {
+      "no": 353,
+      "kanji": "コピー機",
+      "reading": "こぴーき",
+      "meaning_id": "Mesin Foto Copy"
+    },
+    {
+      "no": 354,
+      "kanji": "数字",
+      "reading": "すうじ",
+      "meaning_id": "Angka"
+    },
+    {
+      "no": 355,
+      "kanji": "机",
+      "reading": "つくえ",
+      "meaning_id": "Meja"
+    },
+    {
+      "no": 356,
+      "kanji": "都合",
+      "reading": "つごう",
+      "meaning_id": "Keadaan"
+    },
+    {
+      "no": 357,
+      "kanji": "悪い",
+      "reading": "わるい",
+      "meaning_id": "Buruk/Jelek"
+    },
+    {
+      "no": 358,
+      "kanji": "使う",
+      "reading": "つかう",
+      "meaning_id": "Menggunakan/Memakai"
+    },
+    {
+      "no": 359,
+      "kanji": "終わる",
+      "reading": "おわる",
+      "meaning_id": "Selesai"
+    },
+    {
+      "no": 360,
+      "kanji": "お願いします",
+      "reading": "おねがいします",
+      "meaning_id": "Mohon Bantuannya"
+    },
+    {
+      "no": 361,
+      "kanji": "氏名",
+      "reading": "しめい",
+      "meaning_id": "Nama Lengkap"
+    },
+    {
+      "no": 362,
+      "kanji": "理由",
+      "reading": "りゆう",
+      "meaning_id": "Alasan"
+    },
+    {
+      "no": 363,
+      "kanji": "自由",
+      "reading": "じゆう",
+      "meaning_id": "Bebas"
+    },
+    {
+      "no": 364,
+      "kanji": "連絡先",
+      "reading": "れんらくさき",
+      "meaning_id": "Nomor Yang Dapat Di Hubungi (Kontak)"
+    },
+    {
+      "no": 365,
+      "kanji": "別に",
+      "reading": "べつに",
+      "meaning_id": "Di Pisah"
+    },
+    {
+      "no": 366,
+      "kanji": "特別（な）",
+      "reading": "とくべつ（な）",
+      "meaning_id": "Khusus/Spesial"
+    },
+    {
+      "no": 367,
+      "kanji": "税別",
+      "reading": "ぜいべつ",
+      "meaning_id": "Belum Termasuk Pajak"
+    },
+    {
+      "no": 368,
+      "kanji": "早く",
+      "reading": "はやく",
+      "meaning_id": "Dengan Cepat"
+    },
+    {
+      "no": 369,
+      "kanji": "吸う",
+      "reading": "すう",
+      "meaning_id": "Menghisap"
+    },
+    {
+      "no": 370,
+      "kanji": "取る",
+      "reading": "とる",
+      "meaning_id": "Mengambil"
+    },
+    {
+      "no": 371,
+      "kanji": "帰る",
+      "reading": "かえる",
+      "meaning_id": "Pulang"
+    },
+    {
+      "no": 372,
+      "kanji": "伝える",
+      "reading": "つたえる",
+      "meaning_id": "Menyampaikan"
+    },
+    {
+      "no": 373,
+      "kanji": "熱",
+      "reading": "ねつ",
+      "meaning_id": "Panas"
+    },
+    {
+      "no": 374,
+      "kanji": "薬",
+      "reading": "くすり",
+      "meaning_id": "Obat"
+    },
+    {
+      "no": 375,
+      "kanji": "病気",
+      "reading": "びょうき",
+      "meaning_id": "Sakit"
+    },
+    {
+      "no": 376,
+      "kanji": "病院",
+      "reading": "びょういん",
+      "meaning_id": "Rumah Sakit"
+    },
+    {
+      "no": 377,
+      "kanji": "入院する",
+      "reading": "にゅういんする",
+      "meaning_id": "Masuk (dirawat) Di Rumah Sakit"
+    },
+    {
+      "no": 378,
+      "kanji": "医者",
+      "reading": "いしゃ",
+      "meaning_id": "Dokter"
+    },
+    {
+      "no": 379,
+      "kanji": "住所",
+      "reading": "じゅうしょ",
+      "meaning_id": "Alamat"
+    },
+    {
+      "no": 380,
+      "kanji": "住む",
+      "reading": "すむ",
+      "meaning_id": "Tinggal"
+    },
+    {
+      "no": 381,
+      "kanji": "～才",
+      "reading": "～さい",
+      "meaning_id": "～Tahun (Umur)"
+    },
+    {
+      "no": 382,
+      "kanji": "痛い",
+      "reading": "いたい",
+      "meaning_id": "Sakit"
+    },
+    {
+      "no": 383,
+      "kanji": "眠い",
+      "reading": "ねむい",
+      "meaning_id": "Mengantuk"
+    },
+    {
+      "no": 384,
+      "kanji": "寝る",
+      "reading": "ねる",
+      "meaning_id": "Tidur"
+    },
+    {
+      "no": 385,
+      "kanji": "記入する",
+      "reading": "きにゅうする",
+      "meaning_id": "Mengisi (Menulis Formulir dll)"
+    },
+    {
+      "no": 386,
+      "kanji": "体",
+      "reading": "からだ",
+      "meaning_id": "Tubuh/Badan"
+    },
+    {
+      "no": 387,
+      "kanji": "体験",
+      "reading": "たいけん",
+      "meaning_id": "Pengalaman"
+    },
+    {
+      "no": 388,
+      "kanji": "顔",
+      "reading": "かお",
+      "meaning_id": "Wajah"
+    },
+    {
+      "no": 389,
+      "kanji": "目",
+      "reading": "め",
+      "meaning_id": "Mata"
+    },
+    {
+      "no": 390,
+      "kanji": "耳",
+      "reading": "みみ",
+      "meaning_id": "Telinga"
+    },
+    {
+      "no": 391,
+      "kanji": "頭",
+      "reading": "あたま",
+      "meaning_id": "Kepala"
+    },
+    {
+      "no": 392,
+      "kanji": "足",
+      "reading": "あし",
+      "meaning_id": "Kaki"
+    },
+    {
+      "no": 393,
+      "kanji": "満足（な）",
+      "reading": "まんぞく（な）",
+      "meaning_id": "Puas/Merasa Puas"
+    },
+    {
+      "no": 394,
+      "kanji": "起きる",
+      "reading": "おきる",
+      "meaning_id": "Bangun"
+    },
+    {
+      "no": 395,
+      "kanji": "歩く",
+      "reading": "あるく",
+      "meaning_id": "Berjalan"
+    },
+    {
+      "no": 396,
+      "kanji": "走る",
+      "reading": "はしる",
+      "meaning_id": "Berlari"
+    },
+    {
+      "no": 397,
+      "kanji": "運動する",
+      "reading": "うんどうする",
+      "meaning_id": "Berolah Raga"
+    },
+    {
+      "no": 398,
+      "kanji": "運転",
+      "reading": "うんてん",
+      "meaning_id": "Mengemudi"
+    },
+    {
+      "no": 399,
+      "kanji": "兄",
+      "reading": "あに",
+      "meaning_id": "Kakak Laki-laki"
+    },
+    {
+      "no": 400,
+      "kanji": "お兄さん",
+      "reading": "おにいさん",
+      "meaning_id": "Kakak Laki-laki"
+    },
+    {
+      "no": 401,
+      "kanji": "姉",
+      "reading": "あね",
+      "meaning_id": "Kakak Perempuan"
+    },
+    {
+      "no": 402,
+      "kanji": "お姉さん",
+      "reading": "おねえさん",
+      "meaning_id": "Kakak Perempuan"
+    },
+    {
+      "no": 403,
+      "kanji": "弟",
+      "reading": "おとうと",
+      "meaning_id": "Adik Laki-laki"
+    },
+    {
+      "no": 404,
+      "kanji": "妹",
+      "reading": "いもうと",
+      "meaning_id": "Adik Perempuan"
+    },
+    {
+      "no": 405,
+      "kanji": "夫",
+      "reading": "おっと",
+      "meaning_id": "Suami"
+    },
+    {
+      "no": 406,
+      "kanji": "妻",
+      "reading": "つま",
+      "meaning_id": "Istri"
+    },
+    {
+      "no": 407,
+      "kanji": "両親",
+      "reading": "りょうしん",
+      "meaning_id": "Orang Tua"
+    },
+    {
+      "no": 408,
+      "kanji": "両親",
+      "reading": "りょうしん",
+      "meaning_id": "Orang Tua"
+    },
+    {
+      "no": 409,
+      "kanji": "親切（な）",
+      "reading": "しんせつ（な）",
+      "meaning_id": "Baik Hati"
+    },
+    {
+      "no": 410,
+      "kanji": "男の子",
+      "reading": "おとこのこ",
+      "meaning_id": "Anak Laki-laki"
+    },
+    {
+      "no": 411,
+      "kanji": "男性",
+      "reading": "だんせい",
+      "meaning_id": "Cowok/ Laki-laki"
+    },
+    {
+      "no": 412,
+      "kanji": "女の子",
+      "reading": "おんなのこ",
+      "meaning_id": "Anak Perempuan"
+    },
+    {
+      "no": 413,
+      "kanji": "女性",
+      "reading": "じょせい",
+      "meaning_id": "Cewek/Perempuan"
+    },
+    {
+      "no": 414,
+      "kanji": "お祝い",
+      "reading": "おいわい",
+      "meaning_id": "Perayaan"
+    },
+    {
+      "no": 415,
+      "kanji": "誕生日",
+      "reading": "たんじょうび",
+      "meaning_id": "Ulang Tahun"
+    },
+    {
+      "no": 416,
+      "kanji": "結婚",
+      "reading": "けっこん",
+      "meaning_id": "Menikah"
+    },
+    {
+      "no": 417,
+      "kanji": "時計",
+      "reading": "とけい",
+      "meaning_id": "Jam Dinding"
+    },
+    {
+      "no": 418,
+      "kanji": "会計",
+      "reading": "かいけい",
+      "meaning_id": "Total (Bill)"
+    },
+    {
+      "no": 419,
+      "kanji": "計画",
+      "reading": "けいかく",
+      "meaning_id": "Rencana"
+    },
+    {
+      "no": 420,
+      "kanji": "幸せ（な）",
+      "reading": "しあわせ（な）",
+      "meaning_id": "Bahagia"
+    },
+    {
+      "no": 421,
+      "kanji": "思う",
+      "reading": "おもう",
+      "meaning_id": "Berfikir"
+    },
+    {
+      "no": 422,
+      "kanji": "選ぶ",
+      "reading": "えらぶ",
+      "meaning_id": "Memilih"
+    },
+    {
+      "no": 423,
+      "kanji": "合格する",
+      "reading": "ごうかくする",
+      "meaning_id": "Lulus"
+    },
+    {
+      "no": 424,
+      "kanji": "価格",
+      "reading": "かかく",
+      "meaning_id": "Harga"
+    },
+    {
+      "no": 425,
+      "kanji": "山",
+      "reading": "やま",
+      "meaning_id": "Gunung"
+    },
+    {
+      "no": 426,
+      "kanji": "川",
+      "reading": "かわ",
+      "meaning_id": "Sungai"
+    },
+    {
+      "no": 427,
+      "kanji": "海",
+      "reading": "うみ",
+      "meaning_id": "Laut"
+    },
+    {
+      "no": 428,
+      "kanji": "島",
+      "reading": "しま",
+      "meaning_id": "Pulau"
+    },
+    {
+      "no": 429,
+      "kanji": "森",
+      "reading": "もり",
+      "meaning_id": "Hutan"
+    },
+    {
+      "no": 430,
+      "kanji": "客",
+      "reading": "きゃく",
+      "meaning_id": "Pengunjung"
+    },
+    {
+      "no": 431,
+      "kanji": "観光地",
+      "reading": "かんこうち",
+      "meaning_id": "Tempat Wisata"
+    },
+    {
+      "no": 432,
+      "kanji": "光る",
+      "reading": "ひかる",
+      "meaning_id": "Bersinar"
+    },
+    {
+      "no": 433,
+      "kanji": "観光地",
+      "reading": "かんこうち",
+      "meaning_id": "Tempat Wisata"
+    },
+    {
+      "no": 434,
+      "kanji": "地震",
+      "reading": "じしん",
+      "meaning_id": "Gempa Bumi"
+    },
+    {
+      "no": 435,
+      "kanji": "経験",
+      "reading": "けいけん",
+      "meaning_id": "Pengalaman"
+    },
+    {
+      "no": 436,
+      "kanji": "体験",
+      "reading": "たいけん",
+      "meaning_id": "Pengalaman"
+    },
+    {
+      "no": 437,
+      "kanji": "写真",
+      "reading": "しゃしん",
+      "meaning_id": "Foto"
+    },
+    {
+      "no": 438,
+      "kanji": "歌",
+      "reading": "うた",
+      "meaning_id": "Lagu"
+    },
+    {
+      "no": 439,
+      "kanji": "歌手",
+      "reading": "かしゅ",
+      "meaning_id": "Penyanyi"
+    },
+    {
+      "no": 440,
+      "kanji": "長い",
+      "reading": "ながい",
+      "meaning_id": "Panjang"
+    },
+    {
+      "no": 441,
+      "kanji": "店長",
+      "reading": "てんちょう",
+      "meaning_id": "Kepala Toko"
+    },
+    {
+      "no": 442,
+      "kanji": "短い",
+      "reading": "みじかい",
+      "meaning_id": "Pendek"
+    },
+    {
+      "no": 443,
+      "kanji": "立つ",
+      "reading": "たつ",
+      "meaning_id": "Berdiri"
+    },
+    {
+      "no": 444,
+      "kanji": "役に立つ",
+      "reading": "やくにたつ",
+      "meaning_id": "Bermanfaat"
+    },
+    {
+      "no": 445,
+      "kanji": "泣く",
+      "reading": "なく",
+      "meaning_id": "Menangis"
+    },
+    {
+      "no": 446,
+      "kanji": "注文",
+      "reading": "ちゅうもん",
+      "meaning_id": "Memesan"
+    },
+    {
+      "no": 447,
+      "kanji": "文化",
+      "reading": "ぶんか",
+      "meaning_id": "Budaya"
+    },
+    {
+      "no": 448,
+      "kanji": "予約",
+      "reading": "よやく",
+      "meaning_id": "Memesan/Booking (Hotel, Restaurant dll)"
+    },
+    {
+      "no": 449,
+      "kanji": "電話番号",
+      "reading": "でんわばんごう",
+      "meaning_id": "Nomor Telepon"
+    },
+    {
+      "no": 450,
+      "kanji": "ご飯",
+      "reading": "ごはん",
+      "meaning_id": "Nasi/Makanan/Hidangan"
+    },
+    {
+      "no": 451,
+      "kanji": "牛乳",
+      "reading": "ぎゅうにゅう",
+      "meaning_id": "Susu Sapi"
+    },
+    {
+      "no": 452,
+      "kanji": "禁煙",
+      "reading": "きんえん",
+      "meaning_id": "Dilarang Merokok"
+    },
+    {
+      "no": 453,
+      "kanji": "禁止",
+      "reading": "きんし",
+      "meaning_id": "Larangan/Dilarang"
+    },
+    {
+      "no": 454,
+      "kanji": "自由",
+      "reading": "じゆう",
+      "meaning_id": "Bebas"
+    },
+    {
+      "no": 455,
+      "kanji": "自然",
+      "reading": "しぜん",
+      "meaning_id": "Alam"
+    },
+    {
+      "no": 456,
+      "kanji": "自転車",
+      "reading": "じてんしゃ",
+      "meaning_id": "Sepeda"
+    },
+    {
+      "no": 457,
+      "kanji": "事故",
+      "reading": "じこ",
+      "meaning_id": "Kecelakaan"
+    },
+    {
+      "no": 458,
+      "kanji": "自分",
+      "reading": "じぶん",
+      "meaning_id": "Diri Sendiri"
+    },
+    {
+      "no": 459,
+      "kanji": "自動",
+      "reading": "じどう",
+      "meaning_id": "Berpindah"
+    },
+    {
+      "no": 460,
+      "kanji": "塩",
+      "reading": "しお",
+      "meaning_id": "Garam"
+    },
+    {
+      "no": 461,
+      "kanji": "油",
+      "reading": "あぶら",
+      "meaning_id": "Minyak"
+    },
+    {
+      "no": 462,
+      "kanji": "量",
+      "reading": "りょう",
+      "meaning_id": "Jumlah"
+    },
+    {
+      "no": 463,
+      "kanji": "切る",
+      "reading": "きる",
+      "meaning_id": "Memotong"
+    },
+    {
+      "no": 464,
+      "kanji": "親切（な）",
+      "reading": "しんせつ（な）",
+      "meaning_id": "Baik Hati"
+    },
+    {
+      "no": 465,
+      "kanji": "大切（な）",
+      "reading": "たいせつ（な）",
+      "meaning_id": "Penting/Berharga"
+    },
+    {
+      "no": 466,
+      "kanji": "焼く",
+      "reading": "やく",
+      "meaning_id": "Memanggang"
+    },
+    {
+      "no": 467,
+      "kanji": "自然",
+      "reading": "しぜん",
+      "meaning_id": "Alam"
+    },
+    {
+      "no": 468,
+      "kanji": "交通",
+      "reading": "こうつう",
+      "meaning_id": "Lalu Lintas"
+    },
+    {
+      "no": 469,
+      "kanji": "交通",
+      "reading": "こうつう",
+      "meaning_id": "Lalu Lintas"
+    },
+    {
+      "no": 470,
+      "kanji": "普通",
+      "reading": "ふつう",
+      "meaning_id": "Biasa"
+    },
+    {
+      "no": 471,
+      "kanji": "船",
+      "reading": "ふね",
+      "meaning_id": "Kapal Laut"
+    },
+    {
+      "no": 472,
+      "kanji": "運転",
+      "reading": "うんてん",
+      "meaning_id": "Mengemudi"
+    },
+    {
+      "no": 473,
+      "kanji": "東京",
+      "reading": "とうきょう",
+      "meaning_id": "Tokyo"
+    },
+    {
+      "no": 474,
+      "kanji": "遊ぶ",
+      "reading": "あそぶ",
+      "meaning_id": "Bermain"
+    },
+    {
+      "no": 475,
+      "kanji": "出発する",
+      "reading": "しゅっぱつする",
+      "meaning_id": "Keberangkatan"
+    },
+    {
+      "no": 476,
+      "kanji": "事故",
+      "reading": "じこ",
+      "meaning_id": "Kecelakaan"
+    },
+    {
+      "no": 477,
+      "kanji": "故障",
+      "reading": "こしょう",
+      "meaning_id": "Rusak"
+    },
+    {
+      "no": 478,
+      "kanji": "週末",
+      "reading": "しゅうまつ",
+      "meaning_id": "Akhir Pekan"
+    },
+    {
+      "no": 479,
+      "kanji": "絵",
+      "reading": "え",
+      "meaning_id": "Gambar/Lukisan"
+    },
+    {
+      "no": 480,
+      "kanji": "空",
+      "reading": "そら",
+      "meaning_id": "Langit"
+    },
+    {
+      "no": 481,
+      "kanji": "泳ぐ",
+      "reading": "およぐ",
+      "meaning_id": "Berenang"
+    },
+    {
+      "no": 482,
+      "kanji": "到着する",
+      "reading": "とうちゃくする",
+      "meaning_id": "Kedatangan"
+    },
+    {
+      "no": 483,
+      "kanji": "お知らせ",
+      "reading": "おしらせ",
+      "meaning_id": "Pengumuman"
+    },
+    {
+      "no": 484,
+      "kanji": "工事",
+      "reading": "こうじ",
+      "meaning_id": "Pekerjaan Kontruksi"
+    },
+    {
+      "no": 485,
+      "kanji": "条件",
+      "reading": "じょうけん",
+      "meaning_id": "Syarat/Kondisi"
+    },
+    {
+      "no": 486,
+      "kanji": "～以上",
+      "reading": "～いじょう",
+      "meaning_id": "～Lebih"
+    },
+    {
+      "no": 487,
+      "kanji": "開く",
+      "reading": "ひらく",
+      "meaning_id": "Membuka"
+    },
+    {
+      "no": 488,
+      "kanji": "開く",
+      "reading": "あく",
+      "meaning_id": "Terbuka"
+    },
+    {
+      "no": 489,
+      "kanji": "生産する",
+      "reading": "せいさんする",
+      "meaning_id": "Memproduksi"
+    },
+    {
+      "no": 490,
+      "kanji": "世界",
+      "reading": "せかい",
+      "meaning_id": "Dunia"
+    },
+    {
+      "no": 491,
+      "kanji": "紙",
+      "reading": "かみ",
+      "meaning_id": "Kertas"
+    },
+    {
+      "no": 492,
+      "kanji": "始まる",
+      "reading": "はじまる",
+      "meaning_id": "Mulai"
+    },
+    {
+      "no": 493,
+      "kanji": "申し込む",
+      "reading": "もうしこむ",
+      "meaning_id": "Mendaftar"
+    },
+    {
+      "no": 494,
+      "kanji": "文化",
+      "reading": "ぶんか",
+      "meaning_id": "Budaya"
+    },
+    {
+      "no": 495,
+      "kanji": "祭り",
+      "reading": "まつり",
+      "meaning_id": "Perayaan/Festival"
+    },
+    {
+      "no": 496,
+      "kanji": "正月",
+      "reading": "しょうがつ",
+      "meaning_id": "Tahun Baru"
+    },
+    {
+      "no": 497,
+      "kanji": "～式",
+      "reading": "～しき",
+      "meaning_id": "Perayaan～"
+    },
+    {
+      "no": 498,
+      "kanji": "米",
+      "reading": "こめ",
+      "meaning_id": "Beras"
+    },
+    {
+      "no": 499,
+      "kanji": "特別（な）",
+      "reading": "とくべつ（な）",
+      "meaning_id": "Khusus/Spesial"
+    },
+    {
+      "no": 500,
+      "kanji": "特に",
+      "reading": "とくに",
+      "meaning_id": "Khususnya"
+    },
+    {
+      "no": 501,
+      "kanji": "服",
+      "reading": "ふく",
+      "meaning_id": "Baju"
+    },
+    {
+      "no": 502,
+      "kanji": "袋",
+      "reading": "ふくろ",
+      "meaning_id": "Kantong"
+    },
+    {
+      "no": 503,
+      "kanji": "全員",
+      "reading": "ぜんいん",
+      "meaning_id": "Semua Orang"
+    },
+    {
+      "no": 504,
+      "kanji": "店員",
+      "reading": "てんいん",
+      "meaning_id": "Pegawai Toko"
+    },
+    {
+      "no": 505,
+      "kanji": "習慣",
+      "reading": "しゅうかん",
+      "meaning_id": "Kebiasaan/Adat Istiadat"
+    },
+    {
+      "no": 506,
+      "kanji": "慣れる",
+      "reading": "なれる",
+      "meaning_id": "Terbiasa"
+    },
+    {
+      "no": 507,
+      "kanji": "普通",
+      "reading": "ふつう",
+      "meaning_id": "Biasa"
+    },
+    {
+      "no": 508,
+      "kanji": "暗い",
+      "reading": "くらい",
+      "meaning_id": "Gelap"
+    },
+    {
+      "no": 509,
+      "kanji": "怒る",
+      "reading": "おこる",
+      "meaning_id": "Marah"
+    },
+    {
+      "no": 510,
+      "kanji": "色",
+      "reading": "いろ",
+      "meaning_id": "Warna"
+    },
+    {
+      "no": 511,
+      "kanji": "赤",
+      "reading": "あか",
+      "meaning_id": "Merah"
+    },
+    {
+      "no": 512,
+      "kanji": "青",
+      "reading": "あお",
+      "meaning_id": "Biru"
+    },
+    {
+      "no": 513,
+      "kanji": "黒",
+      "reading": "くろ",
+      "meaning_id": "Hitam"
+    },
+    {
+      "no": 514,
+      "kanji": "白",
+      "reading": "しろ",
+      "meaning_id": "Putih"
+    },
+    {
+      "no": 515,
+      "kanji": "女性",
+      "reading": "じょせい",
+      "meaning_id": "Cewek/Perempuan"
+    },
+    {
+      "no": 516,
+      "kanji": "男性",
+      "reading": "だんせい",
+      "meaning_id": "Cowok/ Laki-laki"
+    },
+    {
+      "no": 517,
+      "kanji": "営業する",
+      "reading": "えいぎょうする",
+      "meaning_id": "Membuka/Buka (Bisnis)"
+    },
+    {
+      "no": 518,
+      "kanji": "営業する",
+      "reading": "えいぎょうする",
+      "meaning_id": "Membuka/Buka (Bisnis)"
+    },
+    {
+      "no": 519,
+      "kanji": "授業",
+      "reading": "じゅぎょう",
+      "meaning_id": "Pelajaran"
+    },
+    {
+      "no": 520,
+      "kanji": "卒業する",
+      "reading": "そつぎょうする",
+      "meaning_id": "Lulus"
+    },
+    {
+      "no": 521,
+      "kanji": "案内する",
+      "reading": "あんないする",
+      "meaning_id": "Memandu (Mengajak Berkeliling)"
+    },
+    {
+      "no": 522,
+      "kanji": "商品",
+      "reading": "しょうひん",
+      "meaning_id": "Produk"
+    },
+    {
+      "no": 523,
+      "kanji": "値段",
+      "reading": "ねだん",
+      "meaning_id": "Harga"
+    },
+    {
+      "no": 524,
+      "kanji": "価格",
+      "reading": "かかく",
+      "meaning_id": "Harga"
+    },
+    {
+      "no": 525,
+      "kanji": "消費税",
+      "reading": "しょうひぜい",
+      "meaning_id": "Pajak Makanan"
+    },
+    {
+      "no": 526,
+      "kanji": "消す",
+      "reading": "けす",
+      "meaning_id": "Memadamkan/Menghapus"
+    },
+    {
+      "no": 527,
+      "kanji": "税別",
+      "reading": "ぜいべつ",
+      "meaning_id": "Belum Termasuk Pajak"
+    },
+    {
+      "no": 528,
+      "kanji": "重い",
+      "reading": "おもい",
+      "meaning_id": "Berat"
+    },
+    {
+      "no": 529,
+      "kanji": "軽い",
+      "reading": "かるい",
+      "meaning_id": "Ringan"
+    },
+    {
+      "no": 530,
+      "kanji": "変わる",
+      "reading": "かわる",
+      "meaning_id": "Berubah/Merubah"
+    },
+    {
+      "no": 531,
+      "kanji": "大変（な）",
+      "reading": "たいへん（な）",
+      "meaning_id": "Berat/Sangat"
+    },
+    {
+      "no": 532,
+      "kanji": "市",
+      "reading": "し",
+      "meaning_id": "Kota"
+    },
+    {
+      "no": 533,
+      "kanji": "図書館",
+      "reading": "としょかん",
+      "meaning_id": "Perpustakaan"
+    },
+    {
+      "no": 534,
+      "kanji": "道具",
+      "reading": "どうぐ",
+      "meaning_id": "Alat"
+    },
+    {
+      "no": 535,
+      "kanji": "～点",
+      "reading": "～てん",
+      "meaning_id": "Point"
+    },
+    {
+      "no": 536,
+      "kanji": "必要（な）",
+      "reading": "ひつよう（な）",
+      "meaning_id": "Perlu/Diperlukan"
+    },
+    {
+      "no": 537,
+      "kanji": "借りる",
+      "reading": "かりる",
+      "meaning_id": "Meminjam"
+    },
+    {
+      "no": 538,
+      "kanji": "返す",
+      "reading": "かえす",
+      "meaning_id": "Mengembalikan"
+    },
+    {
+      "no": 539,
+      "kanji": "閉まる",
+      "reading": "しまる",
+      "meaning_id": "Menutup"
+    },
+    {
+      "no": 540,
+      "kanji": "外国",
+      "reading": "がいこく",
+      "meaning_id": "Luar Negeri"
+    },
+    {
+      "no": 541,
+      "kanji": "外",
+      "reading": "そと",
+      "meaning_id": "Luar"
+    },
+    {
+      "no": 542,
+      "kanji": "情報",
+      "reading": "じょうほう",
+      "meaning_id": "Informasi"
+    },
+    {
+      "no": 543,
+      "kanji": "相談",
+      "reading": "そうだん",
+      "meaning_id": "Konsultasi"
+    },
+    {
+      "no": 544,
+      "kanji": "相談",
+      "reading": "そうだん",
+      "meaning_id": "Konsultasi"
+    },
+    {
+      "no": 545,
+      "kanji": "質問",
+      "reading": "しつもん",
+      "meaning_id": "Pertanyaan"
+    },
+    {
+      "no": 546,
+      "kanji": "問題",
+      "reading": "もんだい",
+      "meaning_id": "Pertanyaan/Masalah"
+    },
+    {
+      "no": 547,
+      "kanji": "窓口",
+      "reading": "まどぐち",
+      "meaning_id": "Loket Informasi"
+    },
+    {
+      "no": 548,
+      "kanji": "郵便局",
+      "reading": "ゆうびんきょく",
+      "meaning_id": "Kantor Pos"
+    },
+    {
+      "no": 549,
+      "kanji": "洗う",
+      "reading": "あらう",
+      "meaning_id": "Mencuci"
+    },
+    {
+      "no": 550,
+      "kanji": "入力する",
+      "reading": "にゅうりょくする",
+      "meaning_id": "Menginput (Data,Informasi dll)"
+    },
+    {
+      "no": 551,
+      "kanji": "危険",
+      "reading": "きけん",
+      "meaning_id": "Berbahaya"
+    },
+    {
+      "no": 552,
+      "kanji": "危ない",
+      "reading": "あぶない",
+      "meaning_id": "Berbahaya"
+    },
+    {
+      "no": 553,
+      "kanji": "危険",
+      "reading": "きけん",
+      "meaning_id": "Berbahaya"
+    },
+    {
+      "no": 554,
+      "kanji": "～種類",
+      "reading": "～しゅるい",
+      "meaning_id": "～Macam/Jenis/Model"
+    },
+    {
+      "no": 555,
+      "kanji": "捨てる",
+      "reading": "すてる",
+      "meaning_id": "Membuang"
+    },
+    {
+      "no": 556,
+      "kanji": "燃える",
+      "reading": "もえる",
+      "meaning_id": "Membakar"
+    },
+    {
+      "no": 557,
+      "kanji": "決める",
+      "reading": "きめる",
+      "meaning_id": "Memutuskan"
+    },
+    {
+      "no": 558,
+      "kanji": "地震",
+      "reading": "じしん",
+      "meaning_id": "Gempa Bumi"
+    },
+    {
+      "no": 559,
+      "kanji": "台風",
+      "reading": "たいふう",
+      "meaning_id": "Topan"
+    },
+    {
+      "no": 560,
+      "kanji": "声",
+      "reading": "こえ",
+      "meaning_id": "Suara (Yang Berasal Dari Mulut)"
+    },
+    {
+      "no": 561,
+      "kanji": "心配（な）",
+      "reading": "しんぱい（な）",
+      "meaning_id": "Cemas"
+    },
+    {
+      "no": 562,
+      "kanji": "集まる",
+      "reading": "あつまる",
+      "meaning_id": "Berkumpul"
+    },
+    {
+      "no": 563,
+      "kanji": "募集",
+      "reading": "ぼしゅう",
+      "meaning_id": "Merekrut (Pekerjaan)"
+    },
+    {
+      "no": 564,
+      "kanji": "進む",
+      "reading": "すすむ",
+      "meaning_id": "(Pindah) Maju"
+    },
+    {
+      "no": 565,
+      "kanji": "最近",
+      "reading": "さいきん",
+      "meaning_id": "Akhir-akhir ini"
+    },
+    {
+      "no": 566,
+      "kanji": "授業",
+      "reading": "じゅぎょう",
+      "meaning_id": "Pelajaran"
+    },
+    {
+      "no": 567,
+      "kanji": "問題",
+      "reading": "もんだい",
+      "meaning_id": "Pertanyaan/Masalah"
+    },
+    {
+      "no": 568,
+      "kanji": "困る",
+      "reading": "こまる",
+      "meaning_id": "Kesulitan/Kerepotan"
+    },
+    {
+      "no": 569,
+      "kanji": "違う",
+      "reading": "ちがう",
+      "meaning_id": "Berbeda/Salah"
+    },
+    {
+      "no": 570,
+      "kanji": "増える",
+      "reading": "ふえる",
+      "meaning_id": "Bertambah/Membludak"
+    },
+    {
+      "no": 571,
+      "kanji": "笑う",
+      "reading": "わらう",
+      "meaning_id": "Tertawa"
+    },
+    {
+      "no": 572,
+      "kanji": "苦労する",
+      "reading": "くろうする",
+      "meaning_id": "Kesulitan (Situasi Sulit)"
+    },
+    {
+      "no": 573,
+      "kanji": "希望",
+      "reading": "きぼう",
+      "meaning_id": "Harapan"
+    },
+    {
+      "no": 574,
+      "kanji": "募集",
+      "reading": "ぼしゅう",
+      "meaning_id": "Merekrut (Pekerjaan)"
+    },
+    {
+      "no": 575,
+      "kanji": "建てる",
+      "reading": "たてる",
+      "meaning_id": "Mendirikan/Membangun"
+    },
+    {
+      "no": 576,
+      "kanji": "続ける",
+      "reading": "つづける",
+      "meaning_id": "Melanjutkan"
+    },
+    {
+      "no": 577,
+      "kanji": "考える",
+      "reading": "かんがえる",
+      "meaning_id": "Berfikir"
+    },
+    {
+      "no": 578,
+      "kanji": "役に立つ",
+      "reading": "やくにたつ",
+      "meaning_id": "Bermanfaat"
+    },
+    {
+      "no": 579,
+      "kanji": "卒業する",
+      "reading": "そつぎょうする",
+      "meaning_id": "Lulus"
+    },
+    {
+      "no": 580,
+      "kanji": "留学する",
+      "reading": "りゅうがくする",
+      "meaning_id": "Belajar Di Luar Negeri"
+    }
+  ]
+}

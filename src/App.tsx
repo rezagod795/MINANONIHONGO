@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, X, Volume2, VolumeX, Trophy, Play, Star, BookOpen, SkipForward, Heart, ArrowLeft, Users, Globe, Medal, Share2, LogIn, LogOut, User, Sun, Moon, Sunrise, Sunset, ExternalLink, Headphones, Zap, Pencil, Layers, Contrast, Eye, Type, Accessibility, CheckCircle2, Languages, Sparkles, RotateCcw } from 'lucide-react';
+import { Settings, X, Volume2, VolumeX, Trophy, Play, Star, BookOpen, SkipForward, Heart, ArrowLeft, Users, Globe, Medal, Share2, LogIn, LogOut, User, Sun, Moon, Sunrise, Sunset, ExternalLink, Headphones, Zap, Pencil, Layers, Contrast, Eye, Type, Accessibility, CheckCircle2, Languages, Sparkles, RotateCcw, Download, Smartphone, Laptop, Copy, Check } from 'lucide-react';
 import { Howl } from 'howler';
 import { levelsData } from './vocabulary';
 import { VocabItem } from './types';
@@ -144,7 +144,10 @@ const playTransitionSwoosh = () => {
 
 export default function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [showInstallBtn, setShowInstallBtn] = useState(false);
+  const [showInstallBtn, setShowInstallBtn] = useState(true);
+  const [showInstallModal, setShowInstallModal] = useState(false);
+  const [installPlatform, setInstallPlatform] = useState<'android' | 'ios' | 'pc'>('android');
+  const [isUrlCopied, setIsUrlCopied] = useState(false);
 
   useEffect(() => {
     const handleBeforeInstall = (e: any) => {
@@ -157,13 +160,28 @@ export default function App() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setShowInstallBtn(false);
+    if (deferredPrompt) {
+      try {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') {
+          setDeferredPrompt(null);
+          return;
+        }
+      } catch (err) {
+        console.warn('Install prompt error:', err);
+      }
     }
-    setDeferredPrompt(null);
+    // If not triggered directly, show the step-by-step modal guide
+    setShowInstallModal(true);
+  };
+
+  const copyAppUrl = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      setIsUrlCopied(true);
+      setTimeout(() => setIsUrlCopied(false), 2500);
+    });
   };
 
   const [view, setView] = useState<'intro' | 'mode_select' | 'quiz' | 'leaderboard' | 'multiplayer' | 'duel_setup' | 'visitors' | 'flashcards' | 'sandbox' | 'dictionary' | 'time_attack' | 'listening_practice' | 'word_match' | 'kana_reading' | 'kana_writing' | 'kanji_hub'>('intro');
@@ -2901,17 +2919,6 @@ export default function App() {
                   Duel (1v1)
                 </button>
               </div>
-
-              {showInstallBtn && (
-                <button
-                  onClick={handleInstallClick}
-                  className={`w-full font-bold py-3 rounded-[20px] shadow-sm border border-emerald-500/30 bg-emerald-500/10 text-emerald-500 transition-all flex items-center justify-center gap-2 active:scale-95 hover:bg-emerald-500 hover:text-white`}
-                >
-                  <BookOpen className="w-4 h-4" />
-                  Pasang Aplikasi (Install)
-                </button>
-              )}
-
 
               <button
                 onClick={startFavoritesQuiz}
@@ -7859,6 +7866,155 @@ export default function App() {
               {/* Footer text */}
               <div className={`text-center text-[9px] font-bold border-t pt-2.5 dark:border-slate-800 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 MinaNoNihongo • Pengaturan Tersimpan Otomatis
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal Panduan Pasang Aplikasi (PWA / Android / iOS / Desktop) */}
+      <AnimatePresence>
+        {showInstallModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`w-full max-w-sm rounded-[32px] p-6 shadow-2xl border text-center relative overflow-hidden flex flex-col gap-4 ${
+                darkMode ? 'bg-slate-900 border-slate-800 text-white' : 'bg-white border-slate-100 text-slate-800'
+              }`}
+            >
+              <button
+                onClick={() => setShowInstallModal(false)}
+                className={`absolute top-4 right-4 p-2 rounded-full transition-colors ${
+                  darkMode ? 'hover:bg-slate-800 text-slate-400' : 'hover:bg-slate-100 text-slate-500'
+                }`}
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex flex-col items-center gap-2">
+                <div className="w-16 h-16 rounded-2xl overflow-hidden shadow-lg border-2 border-emerald-500/40 p-0.5 bg-white">
+                  <img src="/logo.png" alt="MinaNihongo Logo" className="w-full h-full object-cover rounded-xl" />
+                </div>
+                <h3 className="text-lg font-black tracking-tight">Pasang Aplikasi MinaNihongo</h3>
+                <p className={`text-xs ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
+                  Gunakan aplikasi layar penuh, cepat, dan bisa diakses kapan saja seperti aplikasi Android asli!
+                </p>
+              </div>
+
+              {/* Tab Selector: Android / iOS / PC */}
+              <div className={`grid grid-cols-3 gap-1 p-1 rounded-2xl border ${
+                darkMode ? 'bg-slate-800/80 border-slate-700/60' : 'bg-slate-100 border-slate-200'
+              }`}>
+                <button
+                  onClick={() => setInstallPlatform('android')}
+                  className={`py-2 text-[11px] font-black rounded-xl transition-all flex items-center justify-center gap-1 ${
+                    installPlatform === 'android'
+                      ? 'bg-emerald-500 text-white shadow-md'
+                      : darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Android</span>
+                </button>
+                <button
+                  onClick={() => setInstallPlatform('ios')}
+                  className={`py-2 text-[11px] font-black rounded-xl transition-all flex items-center justify-center gap-1 ${
+                    installPlatform === 'ios'
+                      ? 'bg-rose-500 text-white shadow-md'
+                      : darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>iPhone</span>
+                </button>
+                <button
+                  onClick={() => setInstallPlatform('pc')}
+                  className={`py-2 text-[11px] font-black rounded-xl transition-all flex items-center justify-center gap-1 ${
+                    installPlatform === 'pc'
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : darkMode ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Laptop className="w-3.5 h-3.5" />
+                  <span>PC / Mac</span>
+                </button>
+              </div>
+
+              {/* Instructions Content */}
+              <div className={`p-4 rounded-2xl border text-left text-xs space-y-2.5 ${
+                darkMode ? 'bg-slate-800/50 border-slate-800' : 'bg-slate-50 border-slate-150'
+              }`}>
+                {installPlatform === 'android' && (
+                  <div className="space-y-2">
+                    <p className="font-bold text-emerald-600 dark:text-emerald-400">📱 Langkah Pasang di Android (Google Chrome):</p>
+                    <ol className="space-y-1.5 text-[11px] list-decimal list-inside leading-relaxed text-slate-700 dark:text-slate-300">
+                      <li>Buka link aplikasi ini di browser <strong>Google Chrome</strong> HP Anda.</li>
+                      <li>Ketuk <strong>ikon titik tiga (⋮)</strong> di pojok kanan atas Chrome.</li>
+                      <li>Pilih menu <strong>"Instal aplikasi"</strong> (atau <em>"Tambahkan ke Layar Utama"</em>).</li>
+                      <li>Tekan tombol <strong>Instal</strong>. Selesai!</li>
+                    </ol>
+                  </div>
+                )}
+
+                {installPlatform === 'ios' && (
+                  <div className="space-y-2">
+                    <p className="font-bold text-rose-600 dark:text-rose-400">🍏 Langkah Pasang di iPhone / iPad (Safari):</p>
+                    <ol className="space-y-1.5 text-[11px] list-decimal list-inside leading-relaxed text-slate-700 dark:text-slate-300">
+                      <li>Buka link aplikasi ini di browser <strong>Safari</strong> iPhone Anda.</li>
+                      <li>Ketuk tombol <strong>Bagikan / Share (ikon kotak panah ke atas)</strong> di bilah bawah.</li>
+                      <li>Gulir ke bawah dan pilih <strong>"Tambahkan ke Layar Utama" (Add to Home Screen)</strong>.</li>
+                      <li>Ketuk <strong>Tambah (Add)</strong> di pojok kanan atas. Selesai!</li>
+                    </ol>
+                  </div>
+                )}
+
+                {installPlatform === 'pc' && (
+                  <div className="space-y-2">
+                    <p className="font-bold text-blue-600 dark:text-blue-400">💻 Langkah Pasang di Komputer / Laptop:</p>
+                    <ol className="space-y-1.5 text-[11px] list-decimal list-inside leading-relaxed text-slate-700 dark:text-slate-300">
+                      <li>Buka di browser <strong>Google Chrome</strong> atau <strong>Microsoft Edge</strong>.</li>
+                      <li>Klik ikon <strong>Instal (ikon monitor dengan panah ke bawah)</strong> di sebelah kanan bilah alamat (address bar).</li>
+                      <li>Klik <strong>Pasang / Install</strong> untuk membuka jendela aplikasi independen.</li>
+                    </ol>
+                  </div>
+                )}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-2 pt-1">
+                {deferredPrompt && (
+                  <button
+                    onClick={() => {
+                      deferredPrompt.prompt();
+                      deferredPrompt.userChoice.then((choiceResult: any) => {
+                        if (choiceResult.outcome === 'accepted') {
+                          setShowInstallModal(false);
+                          setDeferredPrompt(null);
+                        }
+                      });
+                    }}
+                    className="w-full py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Klik di Sini untuk Pasang Sekarang</span>
+                  </button>
+                )}
+
+                <button
+                  onClick={copyAppUrl}
+                  className={`w-full py-2.5 rounded-2xl border text-xs font-bold flex items-center justify-center gap-2 active:scale-95 transition-all ${
+                    isUrlCopied
+                      ? 'bg-emerald-500/15 border-emerald-500 text-emerald-500'
+                      : darkMode
+                        ? 'bg-slate-800 border-slate-700 hover:bg-slate-700 text-slate-200'
+                        : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700 shadow-xs'
+                  }`}
+                >
+                  {isUrlCopied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+                  <span>{isUrlCopied ? 'Tautan Aplikasi Berhasil Disalin! 🎉' : 'Salin Tautan Aplikasi untuk Dibuka di HP'}</span>
+                </button>
               </div>
             </motion.div>
           </div>

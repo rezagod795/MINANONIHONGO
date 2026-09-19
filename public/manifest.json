@@ -1,17 +1,29 @@
 {
-  "name": "Minanihongo",
-  "short_name": "Minanihongo",
-  "description": "Pelajari kosakata Minna no Nihongo dengan seru!",
+  "name": "MinaNihongo - Belajar Bahasa Jepang",
+  "short_name": "MinaNihongo",
+  "description": "Aplikasi kuis kosakata Minna no Nihongo dan Kuis 580 Kanji Irodori interaktif",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#f43f5e",
   "icons": [
     {
-      "src": "https://cdn-icons-png.flaticon.com/512/330/330437.png",
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any"
     }
   ]
 }

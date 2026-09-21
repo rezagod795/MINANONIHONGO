@@ -13,6 +13,8 @@ export interface LevelData {
   name: string;
   vocab: VocabItem[];
   icon: string;
+  imageUrl?: string;
+  landmark?: string;
 }
 
 export interface LevelsMap {

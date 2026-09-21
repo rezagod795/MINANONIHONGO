@@ -52,9 +52,9 @@ export const RippleButton = React.forwardRef<HTMLButtonElement, RippleButtonProp
         </div>
 
         {/* Animated Ripples */}
-        {ripples.map((ripple) => (
+        {ripples.map((ripple, rIdx) => (
           <motion.span
-            key={ripple.id}
+            key={`btn-ripple-${ripple.id}-${rIdx}`}
             initial={{ scale: 0, opacity: 0.45 }}
             animate={{ scale: 1, opacity: 0 }}
             transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}

@@ -15,6 +15,83 @@ async function startServer() {
     res.json({ status: 'ok', server: 'full-stack' });
   });
 
+  // API Route: Kirim OTP ke Pengguna (Email / FormSubmit)
+  app.post('/api/send-otp', async (req: Request, res: Response) => {
+    try {
+      const { name, contact, type, otp } = req.body;
+      if (!name || !contact || !otp) {
+        return res.status(400).json({ error: "Data pendaftaran tidak lengkap" });
+      }
+
+      // Kirim email OTP jika kontak adalah email
+      if (type === 'email' && contact.includes('@')) {
+        try {
+          await fetch(`https://formsubmit.co/ajax/${encodeURIComponent(contact)}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify({
+              _subject: `[MinaNihongo] Kode Verifikasi OTP Anda: ${otp}`,
+              nama_pendaftar: name,
+              kode_otp: otp,
+              pesan: `Halo ${name},\n\nTerima kasih telah mendaftar di Aplikasi Pembelajaran Bahasa Jepang MinaNihongo.\n\nKode Verifikasi OTP Anda adalah: ${otp}\n\nMasukkan kode ini di aplikasi untuk mengaktifkan akun Anda. Kode ini berlaku selama 10 menit.`,
+              _captcha: 'false',
+              _template: 'box'
+            })
+          });
+        } catch (mailErr) {
+          console.warn("Direct user OTP mail dispatch warning:", mailErr);
+        }
+      }
+
+      return res.json({ success: true, message: `Kode OTP berhasil disiapkan untuk ${contact}` });
+    } catch (err: any) {
+      console.error("Error in /api/send-otp:", err);
+      return res.status(500).json({ error: "Gagal mengirim OTP", details: err.message });
+    }
+  });
+
+  // API Route: Kirim Data Pendaftar Baru ke Gmail Admin (duta070905@gmail.com)
+  app.post('/api/notify-admin', async (req: Request, res: Response) => {
+    try {
+      const { name, age, contact, type, contactType, registeredAt, verified } = req.body;
+      const ADMIN_EMAIL = 'duta070905@gmail.com';
+      const contactMethod = (contactType === 'phone' || type === 'phone') ? 'Nomor HP' : 'Email (Gmail)';
+
+      // Kirim notifikasi data pendaftar ke Gmail Admin
+      try {
+        await fetch(`https://formsubmit.co/ajax/${ADMIN_EMAIL}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify({
+            _subject: `🎉 Pendaftar Baru MinaNihongo: ${name} (${age} Thn) [${contactMethod}]`,
+            nama: name,
+            usia: `${age} Tahun`,
+            kontak: contact,
+            tipe_kontak: contactMethod,
+            status_verifikasi: verified ? 'TERVERIFIKASI (OTP Valid)' : 'Pending',
+            waktu_pendaftaran: registeredAt || new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
+            aplikasi: 'MinaNihongo - Aplikasi Belajar Bahasa Jepang',
+            _captcha: 'false',
+            _template: 'table'
+          })
+        });
+      } catch (adminMailErr) {
+        console.warn("Admin notification mail dispatch warning:", adminMailErr);
+      }
+
+      return res.json({ success: true, message: "Data pendaftar berhasil dikirim ke Admin." });
+    } catch (err: any) {
+      console.error("Error in /api/notify-admin:", err);
+      return res.status(500).json({ error: "Gagal mengirim notifikasi admin", details: err.message });
+    }
+  });
+
   // API Route: Google Cloud Text-to-Speech proxy
   app.get('/api/tts', async (req: Request, res: Response) => {
     const text = req.query.text;

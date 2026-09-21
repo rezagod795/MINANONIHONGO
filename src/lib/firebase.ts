@@ -208,13 +208,26 @@ export const logout = async () => {
   }
 };
 
+// Helper to check if user is local, guest, or unauthenticated in Firebase
+const isLocalOrUnauthenticated = (userId: string): boolean => {
+  if (!userId) return true;
+  if (userId.startsWith('local_') || userId.startsWith('guest_') || userId.startsWith('reg_')) return true;
+  try {
+    const auth = getAppAuth();
+    if (!auth.currentUser || auth.currentUser.uid !== userId) return true;
+  } catch {
+    return true;
+  }
+  return false;
+};
+
 // Progress Functions
 export const saveUserProgress = async (
   userId: string, 
   highScores: Record<number, number>, 
   favorites: VocabItem[]
 ) => {
-  if (userId.startsWith('local_guest_')) return;
+  if (isLocalOrUnauthenticated(userId)) return;
   const path = `progress/${userId}`;
   try {
     const db = getDb();
@@ -230,7 +243,7 @@ export const saveUserProgress = async (
 };
 
 export const subscribeToUserProgress = (userId: string, callback: (data: any) => void) => {
-  if (userId.startsWith('local_guest_')) {
+  if (isLocalOrUnauthenticated(userId)) {
     return () => {}; // return empty unsubscriber
   }
   const path = `progress/${userId}`;
@@ -250,7 +263,7 @@ export const subscribeToUserProgress = (userId: string, callback: (data: any) =>
 
 // Presence Functions
 export const updatePresence = async (userId: string, user: FirebaseUser | null) => {
-  if (userId.startsWith('local_guest_')) return;
+  if (isLocalOrUnauthenticated(userId)) return;
   const path = `presence/${userId}`;
   const db = getDb();
   try {

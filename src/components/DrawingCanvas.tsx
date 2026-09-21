@@ -483,9 +483,9 @@ export function DrawingCanvas({
           <div className="flex items-center gap-1.5">
             <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Warna:</span>
             <div className="flex gap-1.5">
-              {colors.map((c) => (
+              {colors.map((c, cIdx) => (
                 <button
-                  key={c.value}
+                  key={`canvas-brush-color-${c.value}-${cIdx}`}
                   onClick={() => setBrushColor(c.value)}
                   style={{ backgroundColor: c.value === '#ffffff' ? '#e2e8f0' : c.value }}
                   className={`w-5 h-5 rounded-full border-2 transition-all active:scale-90 flex items-center justify-center ${
@@ -507,9 +507,9 @@ export function DrawingCanvas({
           <div className="flex items-center gap-1">
             <span className="text-[9px] font-black uppercase text-slate-400 tracking-wider">Kuas:</span>
             <div className="flex gap-1">
-              {widths.map((w) => (
+              {widths.map((w, wIdx) => (
                 <button
-                  key={w.value}
+                  key={`canvas-brush-width-${w.value}-${wIdx}`}
                   onClick={() => setBrushWidth(w.value)}
                   className={`font-black text-[8.5px] px-2 py-0.5 rounded-full border transition-all active:scale-95 ${
                     brushWidth === w.value

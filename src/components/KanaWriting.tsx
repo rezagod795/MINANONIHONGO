@@ -11,6 +11,7 @@ interface KanaWritingProps {
   onSwitchToReading: () => void;
   speakJapanese: (text: string) => void;
   playSfx: (type: 'click' | 'correct' | 'wrong' | 'levelup' | 'streak') => void;
+  initialScriptType?: 'hiragana' | 'katakana';
 }
 
 export function KanaWriting({
@@ -19,8 +20,15 @@ export function KanaWriting({
   onSwitchToReading,
   speakJapanese,
   playSfx,
+  initialScriptType = 'hiragana',
 }: KanaWritingProps) {
-  const [scriptType, setScriptType] = useState<'hiragana' | 'katakana'>('hiragana');
+  const [scriptType, setScriptType] = useState<'hiragana' | 'katakana'>(initialScriptType);
+
+  React.useEffect(() => {
+    if (initialScriptType) {
+      setScriptType(initialScriptType);
+    }
+  }, [initialScriptType]);
   const [charIndex, setCharIndex] = useState(0);
   const [activeRow, setActiveRow] = useState<string>('all');
   const [successCount, setSuccessCount] = useState(0);
@@ -199,9 +207,9 @@ export function KanaWriting({
 
         {/* Filter Bar */}
         <div className="flex gap-1.5 overflow-x-auto no-scrollbar py-0.5">
-          {rows.map(r => (
+          {rows.map((r, idx) => (
             <button
-              key={r.id}
+              key={`kana-writing-row-${r.id}-${idx}`}
               onClick={() => {
                 playSfx('click');
                 setActiveRow(r.id);

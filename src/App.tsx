@@ -1,12 +1,11 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Settings, X, Volume2, VolumeX, Trophy, Play, Star, BookOpen, SkipForward, Heart, ArrowLeft, Users, Globe, Medal, Share2, LogIn, LogOut, User, Sun, Moon, Sunrise, Sunset, ExternalLink, Headphones, Zap, Pencil, Layers, Contrast, Eye, Type, Accessibility, CheckCircle2, Languages, Sparkles, RotateCcw, Download, Smartphone, Laptop, Copy, Check } from 'lucide-react';
+import { Settings, X, Volume2, VolumeX, Trophy, Play, Star, BookOpen, SkipForward, Heart, ArrowLeft, Users, Globe, Medal, Share2, LogIn, LogOut, User, Sun, Moon, Sunrise, Sunset, ExternalLink, Headphones, Zap, Pencil, Layers, Contrast, Eye, Type, Accessibility, CheckCircle2, Languages, Sparkles, RotateCcw, Download, Smartphone, Laptop, Copy, Check, Home, Bell, Search, ChevronRight, BarChart3, Phone, Mail, MessageCircle } from 'lucide-react';
 import { Howl } from 'howler';
 import { levelsData } from './vocabulary';
 import { VocabItem } from './types';
 import confetti from 'canvas-confetti';
 import { ProgressChart } from './components/ProgressChart';
-import { KoiPond } from './components/KoiPond';
 import { DrawingCanvas } from './components/DrawingCanvas';
 import { KanaReading } from './components/KanaReading';
 import { KanaWriting } from './components/KanaWriting';
@@ -14,8 +13,16 @@ import { KanjiHub } from './components/KanjiHub';
 import { IRODORI_KANJI_LIST, KANJI_TIERS, KANJI_LEVEL_CHUNKS, KanjiVocabItem } from './data/kanji_data';
 import { RippleButton } from './components/RippleButton';
 import { FlightLoading } from './components/FlightLoading';
+import { LoginScreen } from './components/LoginScreen';
 import { CinematicCurtain } from './components/CinematicCurtain';
 import { AchievementCelebration, triggerSuperchargedConfetti, playVictoryFanfare } from './components/AchievementCelebration';
+import { RegistrationModal, RegisteredUserProfile } from './components/RegistrationModal';
+import { IntroMenu } from './components/IntroMenu';
+import { JapaneseLandmarkQuizView } from './components/JapaneseLandmarkQuizView';
+import { DictionaryView } from './components/DictionaryView';
+import { ProfileView } from './components/ProfileView';
+import { LevelUpModal } from './components/LevelUpModal';
+import { calculateProfileLevel, ProfileLevelInfo } from './lib/levelSystem';
 import { 
   loginWithGoogle, 
   loginWithGoogleRedirect,
@@ -39,8 +46,12 @@ import {
   subscribeToVisitors
 } from './lib/firebase';
 import { onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { instantAudio } from './lib/soundEngine';
 
-// Sound definitions
+// Pre-computed vocabulary cache across all levels to avoid expensive flatMap during quiz
+const ALL_VOCABS_CACHE: VocabItem[] = (Object.values(levelsData) as any[]).flatMap(lvl => lvl.vocab || []) as VocabItem[];
+
+// Sound definitions (kept for volume preferences and settings preview)
 const sounds = {
   correct: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2000/2000-preview.mp3'], volume: 0.5 }),
   wrong: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/2003/2003-preview.mp3'], volume: 0.5 }),
@@ -223,6 +234,123 @@ export default function App() {
   const [p1Stats, setP1Stats] = useState({ score: 0, lives: 5 });
   const [p2Stats, setP2Stats] = useState({ score: 0, lives: 5 });
   
+  const [registeredUser, setRegisteredUser] = useState<RegisteredUserProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem('minanihongo_registered_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [showRegistrationModal, setShowRegistrationModal] = useState<boolean>(false);
+
+  // Dynamic User XP & Profile Level State
+  const [userXp, setUserXp] = useState<number>(() => {
+    try {
+      const saved = localStorage.getItem('minanihongo_user_xp');
+      if (saved) return parseInt(saved, 10);
+      const regSaved = localStorage.getItem('minanihongo_registered_user');
+      if (regSaved) {
+        const parsed = JSON.parse(regSaved);
+        if (typeof parsed.xp === 'number') return parsed.xp;
+      }
+      const highScoresSaved = localStorage.getItem('minanihongo_highscores');
+      if (highScoresSaved) {
+        const parsed = JSON.parse(highScoresSaved);
+        const sum = Object.values(parsed).reduce((a: any, b: any) => Number(a) + Number(b), 0);
+        return Math.max(0, Number(sum) * 15);
+      }
+      return 0;
+    } catch {
+      return 0;
+    }
+  });
+
+  const [showLevelUpModal, setShowLevelUpModal] = useState<boolean>(false);
+  const [levelUpModalData, setLevelUpModalData] = useState<{
+    oldLevel: number;
+    newLevel: number;
+    levelInfo: ProfileLevelInfo;
+    xpEarned: number;
+  } | null>(null);
+
+  // Status login aplikasi (Menampilkan tampilan Login setelah loading jika belum login)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    try {
+      return sessionStorage.getItem('minanihongo_session_logged_in') === 'true';
+    } catch {
+      return false;
+    }
+  });
+
+  const handleLoginSuccess = (profile: RegisteredUserProfile) => {
+    setRegisteredUser(profile);
+    setIsLoggedIn(true);
+    try {
+      sessionStorage.setItem('minanihongo_session_logged_in', 'true');
+    } catch {}
+
+    const localUser = {
+      uid: profile.id || `usr_${Date.now()}`,
+      displayName: profile.name,
+      email: profile.contactType === 'email' ? profile.contact : `${profile.contact.replace(/\D/g, '')}@phone.local`,
+      isAnonymous: false,
+      photoURL: null
+    };
+    localStorage.setItem('minanihongo_local_user', JSON.stringify(localUser));
+    setUser(localUser as any);
+  };
+
+  const handleGuestLogin = () => {
+    setIsLoggedIn(true);
+    try {
+      sessionStorage.setItem('minanihongo_session_logged_in', 'true');
+    } catch {}
+
+    if (!user) {
+      const guestProfile: RegisteredUserProfile = {
+        id: `guest_${Date.now()}`,
+        name: 'Tamu',
+        age: 20,
+        contact: 'tamu@minanihongo.local',
+        contactType: 'email',
+        registeredAt: new Date().toISOString(),
+        verified: true
+      };
+      setRegisteredUser(guestProfile);
+      const localUser = {
+        uid: guestProfile.id,
+        displayName: 'Tamu',
+        email: 'tamu@minanihongo.local',
+        isAnonymous: true,
+        photoURL: null
+      };
+      setUser(localUser as any);
+    }
+  };
+
+  const handleRegistrationSuccess = (profile: RegisteredUserProfile) => {
+    setRegisteredUser(profile);
+    setShowRegistrationModal(false);
+    setIsLoggedIn(true);
+    try {
+      sessionStorage.setItem('minanihongo_session_logged_in', 'true');
+    } catch {}
+
+    // Auto-create local user profile if not logged in so display name and presence match
+    if (!user) {
+      const localUser = {
+        uid: `reg_${Date.now()}`,
+        displayName: profile.name,
+        email: profile.contactType === 'email' ? profile.contact : `${profile.contact.replace(/\D/g, '')}@phone.local`,
+        isAnonymous: false,
+        photoURL: null
+      };
+      localStorage.setItem('minanihongo_local_user', JSON.stringify(localUser));
+      setUser(localUser as any);
+    }
+  };
+
   const [user, setUser] = useState<FirebaseUser | null>(() => {
     try {
       const saved = localStorage.getItem('minanihongo_local_user');
@@ -236,7 +364,9 @@ export default function App() {
     try {
       localStorage.removeItem('minanihongo_local_user');
       localStorage.removeItem('minanihongo_saved_login_password');
+      sessionStorage.removeItem('minanihongo_session_logged_in');
       setUser(null);
+      setIsLoggedIn(false);
       if (isFirebaseConfigured()) {
         await logout();
       }
@@ -334,6 +464,7 @@ export default function App() {
   const [dictionaryTab, setDictionaryTab] = useState<'all' | 'vocab' | 'kanji'>('all');
   const [activeKanjiTierFilter, setActiveKanjiTierFilter] = useState<'all' | 'nyuumon' | 'shokyuu1' | 'shokyuu2'>('all');
   const [kanjiHubInitialTab, setKanjiHubInitialTab] = useState<'quiz' | 'flashcards' | 'dictionary' | 'practice_write'>('quiz');
+  const [initialKanaScript, setInitialKanaScript] = useState<'hiragana' | 'katakana'>('hiragana');
   const [flashcardKnownCount, setFlashcardKnownCount] = useState<Record<string, 'known' | 'unknown'>>({});
 
   const triggerScorePopup = (type: 'single' | 'p1' | 'p2' | 'remote-self') => {
@@ -362,6 +493,46 @@ export default function App() {
 
   const totalXP = useMemo(() => Object.values(highScores).reduce((a: number, b: number) => a + b, 0), [highScores]);
   const isMaster = totalXP >= 50; // Threshold for mastery effect
+
+  // Add XP and handle Profile Level progression
+  const addXp = useCallback((amount: number) => {
+    if (amount <= 0) return { leveledUp: false, oldLevel: 1, newLevel: 1, info: calculateProfileLevel(userXp), xpEarned: 0 };
+    
+    let leveledUp = false;
+    let oldLevel = 1;
+    let newLevel = 1;
+    let finalInfo = calculateProfileLevel(userXp + amount);
+
+    setUserXp(prevXp => {
+      const oldInfo = calculateProfileLevel(prevXp);
+      const nextXp = prevXp + amount;
+      const newInfo = calculateProfileLevel(nextXp);
+      oldLevel = oldInfo.level;
+      newLevel = newInfo.level;
+      leveledUp = newLevel > oldLevel;
+      finalInfo = newInfo;
+
+      try {
+        localStorage.setItem('minanihongo_user_xp', nextXp.toString());
+        setRegisteredUser(curr => {
+          if (!curr) return curr;
+          const updated = { ...curr, xp: nextXp, profileLevel: newInfo.level };
+          localStorage.setItem('minanihongo_registered_user', JSON.stringify(updated));
+          return updated;
+        });
+      } catch {}
+
+      return nextXp;
+    });
+
+    return {
+      leveledUp,
+      oldLevel,
+      newLevel,
+      info: finalInfo,
+      xpEarned: amount
+    };
+  }, [userXp]);
 
   const themeClasses = {
     text: isMaster ? 'text-amber-500' : `text-${theme.color}-500`,
@@ -393,6 +564,7 @@ export default function App() {
   });
 
   const [showSettingsModal, setShowSettingsModal] = useState<boolean>(false);
+  const [showNotificationModal, setShowNotificationModal] = useState<boolean>(false);
   const [settingsTab, setSettingsTab] = useState<'audio' | 'accessibility' | 'transitions'>('transitions');
 
   // Screen Transition State (Curtain / Slide / Fade)
@@ -504,22 +676,41 @@ export default function App() {
   }, [voiceAssistantEnabled]);
 
   useEffect(() => {
+    const handleFirstTouch = () => {
+      instantAudio.warmup();
+      window.removeEventListener('pointerdown', handleFirstTouch);
+      window.removeEventListener('keydown', handleFirstTouch);
+    };
+    window.addEventListener('pointerdown', handleFirstTouch, { passive: true });
+    window.addEventListener('keydown', handleFirstTouch, { passive: true });
+    return () => {
+      window.removeEventListener('pointerdown', handleFirstTouch);
+      window.removeEventListener('keydown', handleFirstTouch);
+    };
+  }, []);
+
+  useEffect(() => {
     if (sounds?.click) sounds.click.volume(clickVolume);
+    instantAudio.setVolume('click', clickVolume);
     localStorage.setItem('sound_vol_click', clickVolume.toString());
   }, [clickVolume]);
 
   useEffect(() => {
     if (sounds?.correct) sounds.correct.volume(correctVolume);
+    instantAudio.setVolume('correct', correctVolume);
     localStorage.setItem('sound_vol_correct', correctVolume.toString());
   }, [correctVolume]);
 
   useEffect(() => {
     if (sounds?.wrong) sounds.wrong.volume(wrongVolume);
+    instantAudio.setVolume('wrong', wrongVolume);
     localStorage.setItem('sound_vol_wrong', wrongVolume.toString());
   }, [wrongVolume]);
 
   useEffect(() => {
     if (sounds?.win) sounds.win.volume(winVolume);
+    instantAudio.setVolume('win', winVolume);
+    instantAudio.setVolume('levelup', winVolume);
     localStorage.setItem('sound_vol_win', winVolume.toString());
   }, [winVolume]);
 
@@ -739,7 +930,7 @@ export default function App() {
 
     // Fallback: If we couldn't find enough unique decoys in the current list, try fallback from all levels
     if (selected.length < 3) {
-      const allVocabs = (Object.values(levelsData) as any[]).flatMap(lvl => lvl.vocab || []) as VocabItem[];
+      const allVocabs = ALL_VOCABS_CACHE;
       const shuffledAll = shuffleArray(allVocabs);
       for (const item of shuffledAll) {
         if (selected.length >= 3) break;
@@ -857,7 +1048,8 @@ export default function App() {
     localStorage.setItem('minanihongo_favorites', JSON.stringify(favorites));
 
     if (user) {
-      if (user.uid.startsWith('local_')) {
+      const isLocal = user.uid.startsWith('local_') || user.uid.startsWith('guest_') || user.uid.startsWith('reg_');
+      if (isLocal) {
         localStorage.setItem(`scores_${user.uid}`, JSON.stringify(highScores));
         localStorage.setItem(`favorites_${user.uid}`, JSON.stringify(favorites));
 
@@ -987,15 +1179,19 @@ export default function App() {
   useEffect(() => {
     if (!isFirebaseConfigured()) return;
     
-    // Check if we have a real Firebase user (not a sandbox local user)
-    const isRealCloudUser = user && !user.uid.startsWith('local_');
+    // Check if we have a real Firebase user (not a sandbox local user or guest)
+    const isRealCloudUser = user && !user.uid.startsWith('local_') && !user.uid.startsWith('guest_') && !user.uid.startsWith('reg_');
     
     if (isRealCloudUser) {
       try {
         const unsubPresence = subscribeToPresence((users) => {
           const now = Date.now();
+          const seenUids = new Set<string>();
           const filtered = users.filter(u => {
             if (!u.lastSeen) return false;
+            const uid = u.uid || u.id;
+            if (!uid || seenUids.has(uid)) return false;
+            seenUids.add(uid);
             const lastSeen = u.lastSeen?.toMillis ? u.lastSeen.toMillis() : 0;
             return (now - lastSeen) < 600000;
           });
@@ -1079,6 +1275,8 @@ export default function App() {
   // Firestore Sync Listener
   useEffect(() => {
     if (!user || !isFirebaseConfigured()) return;
+    const isLocal = user.uid.startsWith('local_') || user.uid.startsWith('guest_') || user.uid.startsWith('reg_');
+    if (isLocal) return;
 
     try {
       return subscribeToUserProgress(user.uid, (data) => {
@@ -1094,9 +1292,9 @@ export default function App() {
     }
   }, [user]);
 
-  const playSfx = useCallback((type: keyof typeof sounds) => {
+  const playSfx = useCallback((type: keyof typeof sounds | 'levelup') => {
     if (soundEnabled) {
-      sounds[type].play();
+      instantAudio.play(type as any);
     }
   }, [soundEnabled]);
 
@@ -1305,33 +1503,30 @@ export default function App() {
       playSfx('correct');
 
       setTimeout(() => {
-        nextQuestion();
-      }, 90);
+        nextQuestion(false);
+      }, 70);
     } else {
       const decreaseLives = (prev: number) => {
         const next = Math.max(0, prev - 1);
         if (next === 0) {
-          setTimeout(() => {
-            setQuizFinished(true);
-            playSfx('win');
-            
-            if (!isFavoritesMode && !multiplayerMode) {
+          if (multiplayerMode) {
+            setTimeout(() => {
+              setQuizFinished(true);
+              playSfx('win');
+            }, 600);
+          } else {
+            // Mode kuis solo landmark: biarkan JapaneseLandmarkQuizView menampilkan tampilan "Coba Lagi" (Game Over)
+            playSfx('wrong');
+            announce("Nyawa Anda telah habis! Silakan pilih Coba Lagi untuk mengulang level.");
+            if (!isFavoritesMode) {
               setHighScores(current => {
-                const finalScore = score + (isCorrect ? 1 : 0);
                 const prevScore = current[currentLevel] || 0;
-                const totalVocab = levelsData[currentLevel]?.vocab.length || 0;
-                const updated = { ...current, [currentLevel]: Math.max(prevScore, finalScore) };
+                const updated = { ...current, [currentLevel]: Math.max(prevScore, score) };
                 localStorage.setItem('minanihongo_highscores', JSON.stringify(updated));
-                if (totalVocab > 0 && finalScore >= totalVocab) {
-                  setCelebratingLevel100(currentLevel);
-                }
-                showToast(`Progres disimpan! Skor akhir: ${finalScore} 🏆`, 'success');
                 return updated;
               });
-            } else {
-              showToast("Pelajaran selesai! 🎉", "success");
             }
-          }, 600);
+          }
         }
         return next;
       };
@@ -1364,37 +1559,61 @@ export default function App() {
   const celebrateLevel100 = (levelNum: number) => {
     playSfx('win');
     setTimeout(() => playSfx('levelup'), 450);
-    triggerConfetti(4500);
     setCelebratingLevel100(levelNum);
   };
 
-  const nextQuestion = () => {
-    playSfx('click');
+  const nextQuestion = (fromManualClick = false) => {
+    if (fromManualClick) {
+      playSfx('click');
+    }
     if (currentIndex + 1 < currentVocabList.length) {
       setCurrentIndex(currentIndex + 1);
     } else {
       setQuizFinished(true);
       playSfx('win');
-      setTimeout(() => playSfx('levelup'), 500);
-      
-      // Trigger intense canvas-confetti celebration when successfully completes the full level
-      triggerConfetti(4200);
+
+      // Calculate XP Earned from this quiz run
+      const totalVocab = currentVocabList.length || 1;
+      const finalScoreVal = multiplayerMode
+        ? (multiplayerMode === 'p1' ? p1Stats.score : p2Stats.score)
+        : score;
+      const accuracyPct = Math.min(100, Math.round((finalScoreVal / totalVocab) * 100));
+      const isSuccess = (multiplayerMode ? (multiplayerMode === 'p1' ? p1Stats.lives : p2Stats.lives) : lives) > 0;
+      const isPerfect = isSuccess && accuracyPct === 100;
+      const xpEarned = Math.max(10, finalScoreVal * 10 + (isPerfect ? 50 : (isSuccess ? 30 : 10)));
+
+      // Add XP to user profile & trigger level-up if threshold is reached
+      const xpResult = addXp(xpEarned);
+      if (xpResult.leveledUp) {
+        setTimeout(() => {
+          setLevelUpModalData({
+            oldLevel: xpResult.oldLevel,
+            newLevel: xpResult.newLevel,
+            levelInfo: xpResult.info,
+            xpEarned,
+          });
+          setShowLevelUpModal(true);
+          playSfx('levelup');
+        }, 1200);
+      } else {
+        setTimeout(() => playSfx('levelup'), 500);
+      }
       
       // Save high score on completion
       if (!isFavoritesMode && !multiplayerMode) {
         setHighScores(current => {
           const prevScore = current[currentLevel] || 0;
-          const totalVocab = levelsData[currentLevel]?.vocab.length || 0;
+          const totalVocabInLvl = levelsData[currentLevel]?.vocab.length || 0;
           const updated = { ...current, [currentLevel]: Math.max(prevScore, score) };
           localStorage.setItem('minanihongo_highscores', JSON.stringify(updated));
-          if (totalVocab > 0 && score >= totalVocab) {
+          if (totalVocabInLvl > 0 && score >= totalVocabInLvl) {
             setCelebratingLevel100(currentLevel);
           }
-          showToast(`Kuis selesai! Skor ${score}/${currentVocabList.length} disimpan! 🏆`, 'success');
+          showToast(`Kuis selesai! +${xpEarned} XP diperoleh! 🏆`, 'success');
           return updated;
         });
       } else {
-        showToast("Pelajaran selesai! 🎉", "success");
+        showToast(`Pelajaran selesai! +${xpEarned} XP diperoleh! 🎉`, "success");
       }
     }
   };
@@ -1407,15 +1626,23 @@ export default function App() {
       immediate?: boolean;
     }
   ) => {
+    if (nextView !== 'intro' && !registeredUser) {
+      setShowRegistrationModal(true);
+      return;
+    }
+
     if (nextView === view && !options?.levelNumber) return;
 
     const isLeavingToMain = nextView === 'mode_select' || nextView === 'intro';
-    const isEnteringActivity = nextView === 'quiz' || nextView === 'kana_reading' || nextView === 'kana_writing' || nextView === 'time_attack' || nextView === 'listening_practice' || nextView === 'word_match' || nextView === 'dictionary' || nextView === 'flashcards';
+    const isEnteringActivity = nextView === 'quiz' || nextView === 'kana_reading' || nextView === 'kana_writing' || nextView === 'time_attack' || nextView === 'listening_practice' || nextView === 'word_match' || nextView === 'flashcards';
 
     const direction = isLeavingToMain ? -1 : 1;
     setSlideDirection(direction);
 
-    if (transitionEffect === 'curtain' && !options?.immediate && (isEnteringActivity || isLeavingToMain)) {
+    // Buka kamus dan profil secara instan tanpa delay tirai
+    const isInstantTab = nextView === 'dictionary' || nextView === 'profile' || view === 'dictionary' || view === 'profile';
+
+    if (transitionEffect === 'curtain' && !options?.immediate && !isInstantTab && (isEnteringActivity || isLeavingToMain)) {
       let title = 'みなのにほんご';
       let subtitle = 'Mina no Nihongo';
       let badgeType: 'quiz' | 'menu' | 'kana' | 'game' | 'general' = 'general';
@@ -1480,7 +1707,62 @@ export default function App() {
       options?.beforeChange?.();
       setView(nextView);
     }
-  }, [view, transitionEffect, currentLevel]);
+  }, [view, transitionEffect, currentLevel, registeredUser]);
+
+  // Sinkronisasi Tombol Kembali HP (Android gesture/hardware back button) dengan Navigasi Aplikasi
+  useEffect(() => {
+    // Jika modal registrasi sedang terbuka, biarkan RegistrationModal menangani navigasi kembalinya secara mandiri
+    if (showRegistrationModal) return;
+
+    // Push history state jika pengguna berada di luar menu intro atau ada modal aktif
+    const hasActiveModal = showSettingsModal || showInstallModal || showDictionary || showLoginHelp || showGuestInput;
+    if (view !== 'intro' || hasActiveModal) {
+      window.history.pushState({ app_view: view, has_modal: hasActiveModal }, '');
+    }
+
+    const handleAppPopState = () => {
+      // 1. Jika ada modal aplikasi yang sedang terbuka, tutup modal tersebut terlebih dahulu
+      if (showSettingsModal) {
+        setShowSettingsModal(false);
+        return;
+      }
+      if (showInstallModal) {
+        setShowInstallModal(false);
+        return;
+      }
+      if (showDictionary) {
+        setShowDictionary(false);
+        return;
+      }
+      if (showLoginHelp) {
+        setShowLoginHelp(false);
+        return;
+      }
+      if (showGuestInput) {
+        setShowGuestInput(false);
+        return;
+      }
+
+      // 2. Jika berada di aktivitas belajar / subview, kembali ke intro
+      if (view !== 'intro') {
+        switchView('intro');
+      }
+    };
+
+    window.addEventListener('popstate', handleAppPopState);
+    return () => {
+      window.removeEventListener('popstate', handleAppPopState);
+    };
+  }, [
+    view, 
+    showRegistrationModal, 
+    showSettingsModal, 
+    showInstallModal, 
+    showDictionary, 
+    showLoginHelp, 
+    showGuestInput, 
+    switchView
+  ]);
 
   const changeLevel = (level: number) => {
     playSfx('click');
@@ -1490,6 +1772,9 @@ export default function App() {
     setScore(0);
     setLives(5);
     setQuizFinished(false);
+    setAnswerLock(false);
+    setFeedback({ type: null, message: '' });
+    setSelectedInd(null);
     setShuffleTrigger(prev => prev + 1);
   };
 
@@ -1529,7 +1814,7 @@ export default function App() {
     }
 
     if (decoys.length < 3) {
-      const allVocabs = (Object.values(levelsData) as any[]).flatMap(lvl => lvl.vocab || []) as VocabItem[];
+      const allVocabs = ALL_VOCABS_CACHE;
       for (const item of shuffleArray(allVocabs)) {
         if (decoys.length >= 3) break;
         const iNorm = item.ind.toLowerCase().trim();
@@ -1674,7 +1959,7 @@ export default function App() {
     }
 
     if (decoys.length < 3) {
-      const allVocabs = (Object.values(levelsData) as any[]).flatMap(lvl => lvl.vocab || []) as VocabItem[];
+      const allVocabs = ALL_VOCABS_CACHE;
       for (const item of shuffleArray(allVocabs)) {
         if (decoys.length >= 3) break;
         const iNorm = item.ind.toLowerCase().trim();
@@ -1760,7 +2045,7 @@ export default function App() {
 
     const list = (currentVocabList.length > 0 ? currentVocabList : (levelsData[currentLevel]?.vocab || [])) as VocabItem[];
     if (list.length === 0) {
-      switchView('mode_select');
+      switchView('intro');
       return;
     }
 
@@ -1883,7 +2168,7 @@ export default function App() {
       alert("⚠️ HARAP MASUK/LOGIN TERLEBIH DAHULU\n\nFitur Duel PVP Online memerlukan profil pengguna. Silakan login dengan Google atau gunakan Tamu Instan (Bebas Hambatan) terlebih dahulu!");
       return;
     }
-    if (user.uid.startsWith('local_')) {
+    if (user.uid.startsWith('local_') || user.uid.startsWith('guest_') || user.uid.startsWith('reg_')) {
       if (isFirebaseConfigured()) {
         const upgrade = confirm(
           `⚠️ AKUN OFFLINE LOKAL TERDETEKSI\n\n` +
@@ -2004,7 +2289,7 @@ export default function App() {
       alert("⚠️ HARAP MASUK/LOGIN TERLEBIH DAHULU\n\nFitur Duel PVP Online memerlukan profil pengguna. Silakan login dengan Google atau gunakan Tamu Instan (Bebas Hambatan) terlebih dahulu!");
       return;
     }
-    if (user.uid.startsWith('local_')) {
+    if (user.uid.startsWith('local_') || user.uid.startsWith('guest_') || user.uid.startsWith('reg_')) {
       if (isFirebaseConfigured()) {
         const upgrade = confirm(
           `⚠️ AKUN OFFLINE LOKAL TERDETEKSI\n\n` +
@@ -2252,7 +2537,7 @@ export default function App() {
 
               return (
                 <div
-                  key={idx}
+                  key={`dialogue-bubble-${currentIndex}-${idx}`}
                   className={`flex flex-col max-w-[85%] rounded-2xl px-3.5 py-1.5 text-left text-xs ${
                     isA 
                       ? 'self-start bg-slate-100 dark:bg-slate-700/60 text-slate-800 dark:text-slate-100 rounded-tl-none border border-slate-200/50 dark:border-slate-700' 
@@ -2319,7 +2604,7 @@ export default function App() {
             <div className="flex items-center justify-center gap-1 my-1.5 h-6">
               {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((i) => (
                 <div
-                  key={i}
+                  key={`audio-equalizer-bar-${i}`}
                   className="w-1 bg-sky-500 rounded-full h-2 animate-pulse"
                   style={{
                     animationDelay: `${i * 0.1}s`
@@ -2359,7 +2644,7 @@ export default function App() {
                 }
 
                 return (
-                  <div key={idx} className="flex gap-1.5 bg-slate-800/40 p-1 rounded border border-slate-800/60 items-start">
+                  <div key={`voice-line-${currentIndex}-${idx}`} className="flex gap-1.5 bg-slate-800/40 p-1 rounded border border-slate-800/60 items-start">
                     <span className={`text-[7px] font-black uppercase px-1 py-0.5 rounded flex-shrink-0 mt-0.5 ${isW ? 'bg-pink-500/10 text-pink-400 border border-pink-500/20' : 'bg-sky-500/10 text-sky-400 border border-sky-500/20'}`}>
                       {label}
                     </span>
@@ -2419,14 +2704,14 @@ export default function App() {
                   ? line.replace("差出人：", "").replace("差出人:", "")
                   : line.replace("本文：", "").replace("本文:", "");
                 return (
-                  <div key={idx} className="mb-1.5 text-xs font-sans tracking-wide">
+                  <div key={`reading-header-${currentIndex}-${idx}`} className="mb-1.5 text-xs font-sans tracking-wide">
                     <span className="text-[8px] font-black uppercase opacity-60 tracking-wider block">{label}</span>
                     <span className="text-[11px] font-bold block" translate="no" dangerouslySetInnerHTML={{ __html: desc.trim() }} />
                   </div>
                 );
               }
               return (
-                <p key={idx} className="text-[11px] leading-relaxed mb-1 font-sans " translate="no" dangerouslySetInnerHTML={{ __html: line.trim() }} />
+                <p key={`reading-line-${currentIndex}-${idx}`} className="text-[11px] leading-relaxed mb-1 font-sans " translate="no" dangerouslySetInnerHTML={{ __html: line.trim() }} />
               );
             })}
           </div>
@@ -2445,7 +2730,7 @@ export default function App() {
         </p>
         <div className="flex items-center justify-center gap-2.5 leading-relaxed">
           <motion.h1 
-            key={activeQuestion?.jpn}
+            key={`question-heading-${currentIndex}-${activeQuestion?.jpn || 'q'}`}
             initial={{ opacity: 0, scale: 0.96 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
@@ -2474,7 +2759,7 @@ export default function App() {
   };
 
   return (
-    <div className={`min-h-screen relative flex items-center justify-center p-4 font-sans overflow-hidden transition-colors duration-300 ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
+    <div className={`min-h-screen relative flex items-center justify-center ${view === 'intro' || view === 'quiz' ? 'p-0' : 'p-2 sm:p-4'} font-sans overflow-x-hidden transition-colors duration-300 ${darkMode ? 'text-slate-100' : 'text-slate-900'}`}>
       {/* Accessible Screen Reader Skip Link */}
       <a 
         href="#main-container" 
@@ -2491,6 +2776,19 @@ export default function App() {
             onComplete={() => {
               setIsLoadingIntro(false);
             }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Tampilan Login Aplikasi (Muncul Setelah Loading Jika Belum Login) */}
+      <AnimatePresence>
+        {!isLoadingIntro && !isLoggedIn && (
+          <LoginScreen
+            onLoginSuccess={handleLoginSuccess}
+            onOpenRegister={() => setShowRegistrationModal(true)}
+            onGuestLogin={handleGuestLogin}
+            registeredUser={registeredUser}
+            darkMode={darkMode}
           />
         )}
       </AnimatePresence>
@@ -2539,7 +2837,7 @@ export default function App() {
       </div>
 
       {/* Theme Toggle & Indicator - Centered Top Toolbar */}
-      {view !== 'mode_select' && view !== 'intro' && (
+      {view !== 'intro' && view !== 'quiz' && view !== 'profile' && (
       <motion.div 
         drag
         dragConstraints={{ left: -140, right: 140, top: 0, bottom: 450 }}
@@ -2563,7 +2861,7 @@ export default function App() {
                 <img referrerPolicy="no-referrer" src={user.photoURL} alt="Avatar" className="w-6 h-6 rounded-xl object-cover border border-violet-400" />
               ) : (
                 <div className={`w-6 h-6 rounded-xl flex items-center justify-center font-black text-[10px] uppercase ${
-                  user.uid.startsWith('local_') ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
+                  (user.uid.startsWith('local_') || user.uid.startsWith('guest_') || user.uid.startsWith('reg_')) ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
                 }`}>
                   {(user.displayName || user.email || 'U').charAt(0)}
                 </div>
@@ -2573,7 +2871,7 @@ export default function App() {
                   {user.displayName || (user.email ? user.email.split('@')[0] : 'Tamu')}
                 </span>
                 <span className="text-[7px] font-bold text-slate-400 uppercase tracking-wider truncate">
-                  {user.uid.startsWith('local_') ? 'Sandbox' : 'Cloud'}
+                  {(user.uid.startsWith('local_') || user.uid.startsWith('guest_') || user.uid.startsWith('reg_')) ? 'Sandbox' : 'Cloud'}
                 </span>
               </div>
               <button
@@ -2685,1693 +2983,80 @@ export default function App() {
       </motion.div>
       )}
 
-      <div id="main-container" tabIndex={-1} className={`relative w-full max-w-[420px] flex items-center justify-center outline-none ${view !== 'intro' && view !== 'mode_select' ? 'pt-18 sm:pt-20' : ''}`}>
+      <div id="main-container" tabIndex={-1} className={`relative w-full ${view === 'intro' || view === 'profile' ? 'max-w-full sm:max-w-[440px]' : 'max-w-[420px]'} flex items-center justify-center outline-none ${view !== 'intro' && view !== 'profile' ? 'pt-18 sm:pt-20' : ''}`}>
         <AnimatePresence mode="wait" initial={false} custom={{ direction: slideDirection, effect: transitionEffect }}>
           {view === 'intro' ? (
+                        <IntroMenu
+              slideDirection={slideDirection}
+              transitionEffect={transitionEffect}
+              viewVariants={viewVariants}
+              darkMode={darkMode}
+              setDarkMode={setDarkMode}
+              playSfx={playSfx}
+              switchView={switchView}
+              setActiveMode={setActiveMode}
+              setShowSettingsModal={setShowSettingsModal}
+              setShowNotificationModal={setShowNotificationModal}
+              setShowRegistrationModal={setShowRegistrationModal}
+              startDuelSetup={startDuelSetup}
+              startFavoritesQuiz={startFavoritesQuiz}
+              favorites={favorites}
+              registeredUser={registeredUser}
+              user={user}
+              levelsData={levelsData}
+              currentLevel={currentLevel}
+              changeLevel={changeLevel}
+              getLevelProgress={getLevelProgress}
+              visitors={visitors}
+              announce={announce}
+              setDictionaryQuery={setDictionaryQuery}
+              view={view}
+              setKanjiHubInitialTab={setKanjiHubInitialTab}
+              setInitialKanaScript={setInitialKanaScript}
+              completed100Levels={completed100Levels}
+              celebrateLevel100={celebrateLevel100}
+            />
+          ) : view === 'profile' ? (
             <motion.div
-              key="intro"
+              key="profile"
               custom={{ direction: slideDirection, effect: transitionEffect }}
               variants={viewVariants}
               initial="initial"
               animate="animate"
               exit="exit"
-              className={`w-full rounded-[48px] shadow-2xl relative z-10 overflow-hidden border backdrop-blur-md transition-colors duration-200 flex flex-col px-6 pt-6 pb-8 items-center text-center gap-3.5 min-h-[75vh] justify-start ${
-                darkMode 
-                ? 'bg-slate-900/90 border-slate-700/50 shadow-slate-950/50' 
-                : 'bg-white/90 border-white/40 shadow-slate-200'
-              }`}
+              className="w-full flex justify-center"
             >
-            {/* Header Judul (Dinaikkan ke atas) */}
-            <div className="space-y-1">
-              <h1 className={`text-4xl sm:text-5xl font-black tracking-normal mb-0.5 transition-colors ${themeClasses.text}`}>みなのにほんご</h1>
-              <p className={`text-base sm:text-lg font-bold ${darkMode ? 'text-slate-300' : 'text-slate-600'}`}>Belajar Bahasa Jepang</p>
-              <div className="flex items-center justify-center gap-2 pt-0.5">
-                <span className={`w-8 h-px ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
-                <p className={`text-[10px] font-black uppercase tracking-widest ${themeClasses.text}`}>Hiragana Mastery</p>
-                <span className={`w-8 h-px ${darkMode ? 'bg-slate-700' : 'bg-slate-200'}`} />
-              </div>
-            </div>
-
-            {/* Quick Toolbar (Pengaturan, Kontras Tinggi, Tema Gelap/Terang & Indikator Tema - Dipindah ke Lingkaran Kuning) */}
-            <div className="flex flex-col items-center gap-1.5 my-1" role="toolbar" aria-label="Pengaturan Cepat Tampilan">
-              <div className="flex items-center gap-2.5">
-                {/* User Profile Card jika login */}
-                {user && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    className={`flex items-center gap-1.5 pl-2 pr-2.5 py-1 rounded-2xl border text-xs font-semibold shadow-sm backdrop-blur-md transition-all ${
-                      darkMode 
-                      ? 'bg-slate-800/90 border-slate-700 text-white' 
-                      : 'bg-white/90 border-slate-200 text-slate-800'
-                    }`}
-                  >
-                    {user.photoURL ? (
-                      <img referrerPolicy="no-referrer" src={user.photoURL} alt="Avatar" className="w-6 h-6 rounded-xl object-cover border border-violet-400" />
-                    ) : (
-                      <div className={`w-6 h-6 rounded-xl flex items-center justify-center font-black text-[10px] uppercase ${
-                        user.uid.startsWith('local_') ? 'bg-amber-100 text-amber-700' : 'bg-violet-100 text-violet-700'
-                      }`}>
-                        {(user.displayName || user.email || 'U').charAt(0)}
-                      </div>
-                    )}
-                    <span className="font-extrabold truncate text-[10px] leading-tight text-violet-500 max-w-[80px]">
-                      {user.displayName || (user.email ? user.email.split('@')[0] : 'Tamu')}
-                    </span>
-                  </motion.div>
-                )}
-
-
-
-                {/* Tombol Pengaturan Suara & Aksesibilitas */}
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => {
-                    playSfx('click');
-                    setShowSettingsModal(true);
-                  }}
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md border transition-all ${
-                    darkMode 
-                    ? 'bg-slate-800/90 text-violet-400 border-slate-700 hover:bg-slate-700 hover:text-white' 
-                    : 'bg-white/95 text-violet-700 border-slate-200 hover:bg-white shadow-slate-200'
-                  }`}
-                  title="Pengaturan Suara & Aksesibilitas"
-                  aria-label="Buka Pengaturan Suara dan Aksesibilitas"
-                >
-                  <Settings className="w-5 h-5" />
-                </motion.button>
-
-                {/* Tombol Mode Kontras Tinggi */}
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => {
-                    const nextVal = !highContrastMode;
-                    setHighContrastMode(nextVal);
-                    playSfx('click');
-                    announce(nextVal ? "Mode Kontras Tinggi diaktifkan" : "Mode Kontras Tinggi dinonaktifkan");
-                  }}
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md border transition-all ${
-                    highContrastMode
-                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold ring-2 ring-amber-400'
-                    : darkMode 
-                      ? 'bg-slate-800/90 text-amber-300 border-slate-700 hover:bg-slate-700' 
-                      : 'bg-white/95 text-slate-800 border-slate-200 hover:bg-white shadow-slate-200'
-                  }`}
-                  title={highContrastMode ? "Mode Kontras Tinggi Aktif (WCAG AAA)" : "Mode Kontras Tinggi"}
-                  aria-label={highContrastMode ? "Nonaktifkan Mode Kontras Tinggi" : "Aktifkan Mode Kontras Tinggi (WCAG AAA)"}
-                  aria-pressed={highContrastMode}
-                >
-                  <Contrast className="w-5 h-5" />
-                </motion.button>
-
-                {/* Tombol Ganti Mode Gelap / Terang */}
-                <motion.button
-                  whileHover={{ scale: 1.08 }}
-                  whileTap={{ scale: 0.92 }}
-                  onClick={() => {
-                    const nextDark = !darkMode;
-                    setDarkMode(nextDark);
-                    playSfx('click');
-                    announce(nextDark ? "Mode Gelap aktif" : "Mode Terang aktif");
-                  }}
-                  className={`w-11 h-11 rounded-2xl flex items-center justify-center shadow-md border transition-all ${
-                    darkMode 
-                    ? 'bg-slate-800/90 text-amber-400 border-slate-700 hover:bg-slate-700' 
-                    : 'bg-white/95 text-slate-700 border-slate-200 hover:bg-white shadow-slate-200'
-                  }`}
-                  title={darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
-                  aria-label={darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
-                >
-                  {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </motion.button>
-              </div>
-
-              {/* Dynamic Theme Indicator Pill */}
-              <div
-                className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-wider backdrop-blur-md transition-colors ${
-                  darkMode 
-                  ? 'bg-slate-800/60 border-slate-700/60 text-slate-300' 
-                  : 'bg-white/90 border-slate-200/90 text-slate-700 font-extrabold shadow-xs'
-                }`}
-              >
-                <theme.icon className={`w-3 h-3 ${themeClasses.text}`} />
-                <span>TEMA: {theme.label.toUpperCase()}</span>
-                {isMaster && (
-                  <div className="flex items-center gap-1 border-l border-slate-700 pl-1.5 ml-0.5 text-amber-500">
-                    <Medal className="w-2.5 h-2.5 fill-amber-500" />
-                    <span>MASTER</span>
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="relative w-full aspect-[4/5] max-w-[280px] mx-auto group mb-2">
-              {/* Main Image Container */}
-              <div className={`absolute inset-0 rounded-[32px] overflow-hidden shadow-2xl border-4 transition-colors ${
-                darkMode ? 'border-slate-800 shadow-slate-950/50' : 'border-white shadow-slate-200'
-              }`}>
-                <img 
-                  src="https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=800&auto=format&fit=crop" 
-                  alt="Mount Fuji and Sakura" 
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  referrerPolicy="no-referrer"
-                />
-                <div className={`absolute inset-0 bg-gradient-to-t via-transparent to-transparent ${
-                  darkMode ? 'from-slate-900/60' : 'from-black/40'
-                }`} />
-              </div>
-
-              {/* Mini Authentic Chalkboard 'あ' */}
-              <motion.div 
-                initial={{ y: 20, rotate: -4, opacity: 0 }}
-                animate={{ y: 0, rotate: -2, opacity: 1 }}
-                whileHover={{ rotate: 0, scale: 1.05 }}
-                transition={{ delay: 0.5, type: "spring", stiffness: 350, damping: 24 }}
-                className="absolute -bottom-5 left-1/2 -translate-x-1/2 z-30 select-none cursor-pointer"
-                title="Papan Tulis Kana"
-              >
-                {/* Wooden Board Frame */}
-                <div className="relative p-2 rounded-xl bg-gradient-to-br from-[#8B5A2B] via-[#6e431f] to-[#4a2e15] shadow-2xl border border-[#a76f36]/40 shadow-black/60 ring-1 ring-black/30">
-                  {/* Wood Corner Screws / Joints subtle effect */}
-                  <div className="absolute top-1 left-1 w-1 h-1 rounded-full bg-[#3d2410] shadow-[0_0.5px_0_rgba(255,255,255,0.2)]" />
-                  <div className="absolute top-1 right-1 w-1 h-1 rounded-full bg-[#3d2410] shadow-[0_0.5px_0_rgba(255,255,255,0.2)]" />
-                  <div className="absolute bottom-1 left-1 w-1 h-1 rounded-full bg-[#3d2410] shadow-[0_0.5px_0_rgba(255,255,255,0.2)]" />
-                  <div className="absolute bottom-1 right-1 w-1 h-1 rounded-full bg-[#3d2410] shadow-[0_0.5px_0_rgba(255,255,255,0.2)]" />
-
-                  {/* Dark Chalkboard Slate Inner Area */}
-                  <div className="relative px-6 py-3 rounded-md bg-[#1e2d24] border border-[#142019] shadow-inner overflow-hidden flex flex-col items-center justify-center">
-                    {/* Chalk texture dust gradient / grain overlay */}
-                    <div className="absolute inset-0 bg-gradient-to-tr from-white/[0.04] via-transparent to-white/[0.08] pointer-events-none" />
-                    <div className="absolute -top-4 -right-4 w-12 h-12 bg-white/[0.03] rounded-full blur-sm pointer-events-none" />
-
-                    {/* Chalk Letter 'あ' with realistic chalk smudge shadow */}
-                    <span className="relative font-serif text-5xl font-normal text-[#F4F6F0] tracking-wide select-none drop-shadow-[0_0_1.5px_rgba(255,255,255,0.85)] filter contrast-125">
-                      あ
-                    </span>
-
-                    {/* Tiny chalk tray ledge at the bottom */}
-                    <div className="absolute bottom-0 inset-x-2 h-[2px] bg-[#3a2312] rounded-full opacity-70" />
-                    {/* Tiny piece of white chalk on the tray */}
-                    <div className="absolute bottom-[2px] right-3 w-2.5 h-[3px] bg-amber-50/90 rounded-xs shadow-xs" />
-                  </div>
-                </div>
-              </motion.div>
-            </div>
-
-            <div className="w-full space-y-3">
-              <button
-                onClick={() => {
-                  playSfx('click');
-                  switchView('mode_select');
-                }}
-                className="w-full bg-rose-500 text-white font-bold py-4 rounded-[24px] shadow-xl hover:bg-rose-600 transition-transform duration-75 flex items-center justify-center gap-3 active:scale-95 border-b-4 border-rose-800 touch-manipulation cursor-pointer"
-              >
-                <Play className="w-5 h-5 fill-white" />
-                Mulai
-              </button>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  onClick={() => {
-                    playSfx('click');
-                    switchView('leaderboard');
-                  }}
-                  className={`font-bold py-3 rounded-[20px] shadow-sm border transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                    darkMode 
-                    ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700' 
-                    : 'bg-white/60 hover:bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <Medal className="w-4 h-4 text-amber-500" />
-                  Peringkat
-                </button>
-                <button
-                  onClick={startDuelSetup}
-                  className={`font-bold py-3 rounded-[20px] shadow-sm border transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                    darkMode 
-                    ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700' 
-                    : 'bg-white/60 hover:bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <Users className="w-4 h-4 text-blue-500" />
-                  Duel (1v1)
-                </button>
-              </div>
-
-              <button
-                onClick={startFavoritesQuiz}
-                className={`w-full font-bold py-3 rounded-[20px] shadow-sm border transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                  darkMode 
-                  ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700' 
-                  : 'bg-white/60 hover:bg-white text-slate-700 border-slate-200'
-                }`}
-              >
-                <Star className={`w-4 h-4 ${favorites.length > 0 ? 'fill-amber-400 text-amber-500' : (darkMode ? 'text-slate-600' : 'text-slate-300')}`} />
-                Kuis Favorit ({favorites.length})
-              </button>
-
-              <div className="pt-2">
-                {(!user || user.uid.startsWith('local_')) ? (
-                  <div className="flex flex-col gap-2">
-                    {/* Local User Active Indicator calling Google Sign-in */}
-                    {user && user.uid.startsWith('local_') && (
-                      <div className="p-3.5 bg-amber-500/10 border border-amber-500/35 text-amber-500 rounded-2xl text-[10px] font-black leading-relaxed flex flex-col gap-1 text-center mb-1">
-                        <span className="tracking-wide">⚠️ AKUN OFFLINE LOKAL AKTIF</span>
-                        <span className="font-bold text-slate-400 normal-case">Fitur Duel PVP membutuhkan jaringan. Hubungkan akun Anda dengan Google atau Tamu Instan di bawah!</span>
-                      </div>
-                    )}
-
-                    {/* Google Login button - Popup (PC) */}
-                    <button
-                      onClick={async () => {
-                        if (!isFirebaseConfigured()) {
-                          alert("Firebase belum terkonfigurasi. Silakan klik tombol 'Setup Firebase' di panel kontrol AI Studio.");
-                          return;
-                        }
-                        setIsLoggingIn(true);
-                        try {
-                          const cloudUser = await loginWithGoogle();
-                          if (cloudUser) {
-                            alert(`🎉 LOGIN GOOGLE BERHASIL!\n\nSelamat Datang, ${cloudUser.displayName || cloudUser.email || "User"}!\nAkun Google Cloud Firebase Anda kini aktif terhubung.`);
-                          }
-                        } catch (e: any) {
-                          setShowLoginHelp(true);
-                          const errCode = e?.code || "";
-                          const errMsg = e?.message || "";
-                          if (errCode === "auth/unauthorized-domain" || errMsg.includes("unauthorized-domain") || errMsg.includes("unauthorized domain")) {
-                            alert(
-                              `⚠️ DOMAIN BELUM TERDAFTAR DI FIREBASE:\n\n` +
-                              `Firebase menolak login popup karena domain web ini belum ditambahkan ke daftar resmi di Firebase Console Anda.\n\n` +
-                              `Cara mengatasinya:\n` +
-                              `1. Buka Firebase Console Anda.\n` +
-                              `2. Masuk ke Authentication > Settings > Authorized Domains.\n` +
-                              `3. Tambahkan domain berikut:\n` +
-                              `   👉 ${window.location.hostname}\n` +
-                              `4. Setelah disimpan, ulangi klik login Google!`
-                            );
-                          } else {
-                            alert(`Gagal login popup: ${errMsg || ""}`);
-                          }
-                        } finally {
-                          setIsLoggingIn(false);
-                        }
-                      }}
-                      disabled={isLoggingIn}
-                      className="w-full bg-blue-600 text-white font-bold py-2.5 rounded-[20px] shadow-sm hover:bg-blue-700 transition-all flex items-center justify-center gap-2 active:scale-95 border-b-4 border-blue-800 disabled:opacity-50 text-xs"
-                    >
-                      <LogIn className="w-4 h-4" />
-                      {isLoggingIn ? "Menghubungkan..." : "Google Sign-In (Metode Popup - PC)"}
-                    </button>
-
-                    {/* Or Separator */}
-                    <div className="flex items-center my-1 gap-2">
-                      <div className="flex-1 h-[1px] bg-slate-500/20" />
-                      <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Atau</span>
-                      <div className="flex-1 h-[1px] bg-slate-500/20" />
-                    </div>
-
-                    {/* Guest Sign-In form / toggle */}
-                     {!showGuestInput ? (
-                      <button
-                        onClick={() => setShowGuestInput(true)}
-                        className={`w-full font-bold py-3 rounded-[20px] shadow-sm border transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                          darkMode 
-                          ? 'bg-slate-800/40 border-slate-700/50 hover:bg-slate-800/80 text-violet-400' 
-                          : 'bg-slate-50/50 border-slate-200 hover:bg-slate-100/50 text-violet-600'
-                        }`}
-                      >
-                        <User className="w-4 h-4" />
-                        Masuk via Akun Lokal / Tamu (Bebas Hambatan)
-                      </button>
-                    ) : (
-                      <div className={`p-4 rounded-[20px] border flex flex-col gap-3 transition-all ${
-                        darkMode 
-                        ? 'bg-slate-900/80 border-slate-800/80' 
-                        : 'bg-white border-slate-200'
-                      }`}>
-                        
-                        {/* Tabs */}
-                        <div className="flex bg-slate-500/10 p-1 rounded-xl">
-                          <button
-                            onClick={() => setGuestModeTab('guest')}
-                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                              guestModeTab === 'guest'
-                                ? (darkMode ? 'bg-slate-800 text-violet-400 shadow-sm' : 'bg-white text-violet-600 shadow-sm')
-                                : 'text-slate-400 hover:text-slate-200'
-                            }`}
-                          >
-                            Tamu Instan
-                          </button>
-                          <button
-                            onClick={() => setGuestModeTab('login')}
-                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                              guestModeTab === 'login'
-                                ? (darkMode ? 'bg-slate-800 text-violet-400 shadow-sm' : 'bg-white text-violet-600 shadow-sm')
-                                : 'text-slate-400 hover:text-slate-200'
-                            }`}
-                          >
-                            Masuk Akun
-                          </button>
-                          <button
-                            onClick={() => setGuestModeTab('register')}
-                            className={`flex-1 py-1.5 text-[10px] font-bold rounded-lg transition-all ${
-                              guestModeTab === 'register'
-                                ? (darkMode ? 'bg-slate-800 text-violet-400 shadow-sm' : 'bg-white text-violet-600 shadow-sm')
-                                : 'text-slate-400 hover:text-slate-200'
-                            }`}
-                          >
-                            Daftar Akun
-                          </button>
-                        </div>
-
-                        {/* Guest Tab */}
-                        {guestModeTab === 'guest' && (
-                          <div className="flex flex-col gap-2.5">
-                            <span className="text-[10px] font-black uppercase tracking-wider block text-slate-400">Siapkan Profil Tamu Lokal</span>
-                            <input
-                              type="text"
-                              value={guestNickname}
-                              onChange={(e) => setGuestNickname(e.target.value.slice(0, 15))}
-                              placeholder="Masukkan Panggilan Anda (contoh: Kenji)"
-                              className={`w-full px-4 py-2.5 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 ${
-                                darkMode 
-                                ? 'bg-slate-950 border-slate-800 text-white focus:ring-violet-500 focus:border-violet-500' 
-                                : 'bg-slate-50 border-slate-200 text-slate-900 focus:ring-violet-500 focus:border-violet-500'
-                              }`}
-                            />
-                            <button
-                              onClick={async () => {
-                                let cleanName = guestNickname.trim();
-                                if (!cleanName) {
-                                  const nicknames = [
-                                    "Kenji 🎋", "Sakura 🌸", "Takeshi ⚔️", "Haruto ⚡", 
-                                    "Yuki ❄️", "Taro 🐟", "Hana 🌺", "Ryu 🐉", 
-                                    "Sora ☁️", "Mina 🇯🇵", "Aiko 🎀", "Yuto 🌟"
-                                  ];
-                                  cleanName = nicknames[Math.floor(Math.random() * nicknames.length)];
-                                }
-                                setIsLoggingIn(true);
-                                try {
-                                  let finalUser: any = null;
-                                  if (isFirebaseConfigured()) {
-                                    try {
-                                      const cloudUser = await loginAsGuest(cleanName);
-                                      if (cloudUser) {
-                                        finalUser = cloudUser;
-                                        alert(`Selamat Datang, ${cleanName}! Profil Tamu Online Anda berhasil dibuat di Cloud.\n\nSekarang Anda bebas bermain game dan ikut Duel Online bersama teman-teman!`);
-                                      }
-                                    } catch (cloudErr) {
-                                      console.warn("Gagal terhubung ke Cloud Auth, beralih ke mode offline lokal:", cloudErr);
-                                    }
-                                  }
-
-                                  if (!finalUser) {
-                                    finalUser = {
-                                      uid: `local_guest_${Math.random().toString(36).substr(2, 9)}`,
-                                      displayName: cleanName,
-                                      email: 'guest@local.app',
-                                      isAnonymous: true,
-                                      photoURL: null
-                                    };
-                                    localStorage.setItem('minanihongo_local_user', JSON.stringify(finalUser));
-                                  }
-
-                                  const guestScores = localStorage.getItem(`scores_${finalUser.uid}`);
-                                  const guestFavs = localStorage.getItem(`favorites_${finalUser.uid}`);
-                                  setHighScores(guestScores ? JSON.parse(guestScores) : {});
-                                  setFavorites(guestFavs ? JSON.parse(guestFavs) : []);
-
-                                  setUser(finalUser);
-                                } catch (e: any) {
-                                  alert("Gagal membuat profil tamu.");
-                                } finally {
-                                  setIsLoggingIn(false);
-                                }
-                              }}
-                              className="w-full py-2.5 text-xs font-black rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all active:scale-95 border-b-2 border-violet-800"
-                            >
-                              Mulai sebagai Tamu
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Login Tab */}
-                        {guestModeTab === 'login' && (
-                          <div className="flex flex-col gap-2.5">
-                            <span className="text-[10px] font-black uppercase tracking-wider block text-slate-400">Masuk Akun Sandbox Lokal</span>
-                            <input
-                              type="email"
-                              value={localEmailInput}
-                              onChange={(e) => setLocalEmailInput(e.target.value)}
-                              placeholder="Alamat Email (contoh: user@gmail.com)"
-                              className={`w-full px-4 py-2 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 ${
-                                darkMode 
-                                ? 'bg-slate-950 border-slate-800 text-white focus:ring-violet-500 focus:border-violet-500' 
-                                : 'bg-slate-50 border-slate-200 text-slate-900 focus:ring-violet-500 focus:border-violet-500'
-                              }`}
-                            />
-                            <input
-                              type="password"
-                              value={localPasswordInput}
-                              onChange={(e) => setLocalPasswordInput(e.target.value)}
-                              placeholder="Kata Sandi / Password"
-                              className={`w-full px-4 py-2 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 ${
-                                darkMode 
-                                ? 'bg-slate-950 border-slate-800 text-white focus:ring-violet-500 focus:border-violet-500' 
-                                : 'bg-slate-50 border-slate-200 text-slate-900 focus:ring-violet-500 focus:border-violet-500'
-                              }`}
-                            />
-                            <button
-                              disabled={isLoggingIn}
-                              onClick={async () => {
-                                const email = localEmailInput.trim().toLowerCase();
-                                const pass = localPasswordInput;
-                                if (!email || !pass) {
-                                  alert("Harap lengkapi email dan password!");
-                                  return;
-                                }
-                                setIsLoggingIn(true);
-                                try {
-                                  let loggedInUser: any = null;
-                                  
-                                  // 1. Try Firebase Cloud Email Auth if configured
-                                  if (isFirebaseConfigured()) {
-                                    try {
-                                      const u = await loginWithEmail(email, pass);
-                                      if (u) {
-                                        loggedInUser = u;
-                                        localStorage.removeItem('minanihongo_local_user');
-                                        alert(`Berhasil masuk ke cloud! Selamat datang kembali, ${u.displayName || u.email}!`);
-                                      }
-                                    } catch (firebaseErr: any) {
-                                      console.warn("Firebase email login failed or disabled, falling back to local database...", firebaseErr);
-                                    }
-                                  }
-                                  
-                                  // 2. Fallback to Local Sandbox database if cloud failed or not configured
-                                  if (!loggedInUser) {
-                                    const accountsStr = localStorage.getItem('minanihongo_local_accounts') || '[]';
-                                    const accounts = JSON.parse(accountsStr);
-                                    const account = accounts.find((a: any) => a.email === email && a.password === pass);
-                                    if (!account) {
-                                      alert("Email atau Sandi salah / tidak ditemukan. Silakan daftarkan akun baru di tab sebelah!");
-                                      setIsLoggingIn(false);
-                                      return;
-                                    }
-                                    
-                                    loggedInUser = {
-                                      uid: `local_user_${account.email}`,
-                                      displayName: account.displayName,
-                                      email: account.email,
-                                      isAnonymous: false,
-                                      photoURL: null
-                                    };
-                                    localStorage.setItem('minanihongo_local_user', JSON.stringify(loggedInUser));
-                                    setHighScores(account.highScores || {});
-                                    setFavorites(account.favorites || []);
-                                    alert(`Berhasil masuk secara offline lokal! Selamat datang, ${account.displayName}!`);
-                                  }
-                                  
-                                  // Preserve email and password session for auto-login on reload
-                                  localStorage.setItem('minanihongo_saved_login_email', email);
-                                  localStorage.setItem('minanihongo_saved_login_password', pass);
-                                  
-                                  setUser(loggedInUser);
-                                  setShowGuestInput(false);
-                                } catch (e: any) {
-                                  alert("Gagal masuk akun: " + (e.message || "Pastikan format benar"));
-                                } finally {
-                                  setIsLoggingIn(false);
-                                }
-                              }}
-                              className="w-full py-2.5 text-xs font-black rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all active:scale-95 border-b-2 border-violet-800 disabled:opacity-50"
-                            >
-                              {isLoggingIn ? "Menghubungkan..." : "Masuk Akun"}
-                            </button>
-                          </div>
-                        )}
-
-                        {/* Register Tab */}
-                        {guestModeTab === 'register' && (
-                          <div className="flex flex-col gap-2.5">
-                            <span className="text-[10px] font-black uppercase tracking-wider block text-slate-400">Daftar Akun Sandbox Baru (Lokal Browser)</span>
-                            <input
-                              type="text"
-                              value={localNicknameInput}
-                              onChange={(e) => setLocalNicknameInput(e.target.value.slice(0, 15))}
-                              placeholder="Nama Panggilan Anda (contoh: Kenji)"
-                              className={`w-full px-4 py-2 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 ${
-                                darkMode 
-                                ? 'bg-slate-950 border-slate-800 text-white focus:ring-violet-500 focus:border-violet-500' 
-                                : 'bg-slate-50 border-slate-200 text-slate-900 focus:ring-violet-500 focus:border-violet-500'
-                              }`}
-                            />
-                            <input
-                              type="email"
-                              value={localEmailInput}
-                              onChange={(e) => setLocalEmailInput(e.target.value)}
-                              placeholder="Alamat Email Akun Baru"
-                              className={`w-full px-4 py-2 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 ${
-                                darkMode 
-                                ? 'bg-slate-950 border-slate-800 text-white focus:ring-violet-500 focus:border-violet-500' 
-                                : 'bg-slate-50 border-slate-200 text-slate-900 focus:ring-violet-500 focus:border-violet-500'
-                              }`}
-                            />
-                            <input
-                              type="password"
-                              value={localPasswordInput}
-                              onChange={(e) => setLocalPasswordInput(e.target.value)}
-                              placeholder="Ketik Sandi Baru Anda"
-                              className={`w-full px-4 py-2 rounded-xl border text-xs font-semibold focus:outline-none focus:ring-1 ${
-                                darkMode 
-                                ? 'bg-slate-950 border-slate-800 text-white focus:ring-violet-500 focus:border-violet-500' 
-                                : 'bg-slate-50 border-slate-200 text-slate-900 focus:ring-violet-500 focus:border-violet-500'
-                              }`}
-                            />
-                            <button
-                              disabled={isLoggingIn}
-                              onClick={async () => {
-                                const nick = localNicknameInput.trim();
-                                const email = localEmailInput.trim().toLowerCase();
-                                const pass = localPasswordInput;
-                                if (!nick || !email || !pass) {
-                                  alert("Harap lengkapi nama panggilan, email, dan password!");
-                                  return;
-                                }
-                                setIsLoggingIn(true);
-                                try {
-                                  let registeredUser: any = null;
-                                  
-                                  // 1. Try Firebase Cloud registration if configured
-                                  if (isFirebaseConfigured()) {
-                                    try {
-                                      const u = await registerWithEmail(email, pass, nick);
-                                      if (u) {
-                                        registeredUser = u;
-                                        localStorage.removeItem('minanihongo_local_user');
-                                        alert(`Pendaftaran Cloud Berhasil! Akun diaktifkan secara online sebagai ${nick}.\n\nAnda sekarang bebas bermain dan berpartisipasi dalam Duel Online!`);
-                                      }
-                                    } catch (firebaseErr: any) {
-                                      console.warn("Firebase email registration failed, falling back to local database...", firebaseErr);
-                                    }
-                                  }
-                                  
-                                  // 2. Fallbox or use local mock sandbox
-                                  if (!registeredUser) {
-                                    const accountsStr = localStorage.getItem('minanihongo_local_accounts') || '[]';
-                                    const accounts = JSON.parse(accountsStr);
-                                    const exists = accounts.some((a: any) => a.email === email);
-                                    if (exists) {
-                                      alert("Email ini sudah terdaftar sebagai akun lokal. Silakan ganti tab ke 'Masuk Akun'.");
-                                      setIsLoggingIn(false);
-                                      return;
-                                    }
-                                    
-                                    const newAccount = {
-                                      email,
-                                      password: pass,
-                                      displayName: nick,
-                                      highScores: { ...highScores },
-                                      favorites: [...favorites]
-                                    };
-                                    
-                                    accounts.push(newAccount);
-                                    localStorage.setItem('minanihongo_local_accounts', JSON.stringify(accounts));
-                                    
-                                    registeredUser = {
-                                      uid: `local_user_${email}`,
-                                      displayName: nick,
-                                      email,
-                                      isAnonymous: false,
-                                      photoURL: null
-                                    };
-                                    localStorage.setItem('minanihongo_local_user', JSON.stringify(registeredUser));
-                                    localStorage.setItem(`scores_${registeredUser.uid}`, JSON.stringify(newAccount.highScores));
-                                    localStorage.setItem(`favorites_${registeredUser.uid}`, JSON.stringify(newAccount.favorites));
-                                    
-                                    alert(`Pendaftaran Offline Berhasil! Akun lokal dibuat & aktif sebagai ${nick}!`);
-                                  }
-                                  
-                                  // Store credentials session for secure reload auto-login
-                                  localStorage.setItem('minanihongo_saved_login_email', email);
-                                  localStorage.setItem('minanihongo_saved_login_password', pass);
-                                  
-                                  setUser(registeredUser);
-                                  setShowGuestInput(false);
-                                } catch (e: any) {
-                                  alert("Gagal daftar akun: " + (e.message || "Gunakan format email dan sandi minimal 6 karakter."));
-                                } finally {
-                                  setIsLoggingIn(false);
-                                }
-                              }}
-                              className="w-full py-2.5 text-xs font-black rounded-xl bg-violet-600 text-white hover:bg-violet-700 transition-all active:scale-95 border-b-2 border-violet-800 disabled:opacity-50"
-                            >
-                              {isLoggingIn ? "Mengirim Data..." : "Daftar Akun Baru"}
-                            </button>
-                          </div>
-                        )}
-                        
-                        {/* Close button */}
-                        <button
-                          onClick={() => setShowGuestInput(false)}
-                          className="w-full py-2 text-[10px] font-bold rounded-xl bg-slate-500/10 hover:bg-slate-500/20 text-slate-400 transition-all"
-                        >
-                          Tutup Form Akun
-                        </button>
-                      </div>
-                    )}
-                    
-                    <button
-                      onClick={() => setShowLoginHelp(prev => !prev)}
-                      className={`text-[9px] font-bold uppercase tracking-wider text-center mt-1 cursor-pointer hover:underline ${
-                        darkMode ? 'text-slate-400' : 'text-slate-500'
-                      }`}
-                    >
-                      {showLoginHelp ? 'Sembunyikan Bantuan' : 'Mengalami Kendala Login? Klik di Sini'}
-                    </button>
-
-                    {showLoginHelp && (
-                      <div className={`p-4 rounded-2xl border text-[10px] leading-relaxed transition-colors ${
-                        darkMode ? 'bg-amber-950/20 border-amber-900/30 text-amber-300' : 'bg-amber-50 border-amber-100 text-amber-800'
-                      }`}>
-                        <span className="font-extrabold uppercase block mb-1">Panduan Mengatasi Kendala Login:</span>
-                        <ol className="list-decimal pl-4 space-y-1">
-                          <li>
-                            <strong>Mengapa Google Login tidak bekerja di dalam AI Studio?</strong>
-                            <p className="mt-0.5 text-slate-400">
-                              Frame preview bawaan AI Studio memblokir popup Google Auth demi alasan keamanan browser.
-                            </p>
-                          </li>
-                          <li className="mt-1">
-                            <strong>Solusi Mudah (Gunakan Tab Baru):</strong>
-                            <p className="mt-0.5">
-                              Klik tombol <strong>"Buka App" / "Buka di tab baru"</strong> di sudut kanan atas panel preview AI Studio, lalu lakukan login Google dari tab baru tersebut. Google login akan langsung bekerja dengan lancar 100%!
-                            </p>
-                          </li>
-                          <li className="mt-1">
-                            <strong>Solusi Alternatif (Masuk Tamu):</strong>
-                            <p className="mt-0.5 text-slate-400">
-                              Gunakan tombol <strong>"Masuk sebagai Tamu"</strong> di atas. Progres dan nilai skor Anda akan tetap disimpan dengan aman di local storage browser Anda!
-                            </p>
-                          </li>
-                        </ol>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="flex flex-col gap-2">
-                    <div className="w-full flex items-center justify-center gap-2 py-2 px-3 bg-emerald-500/10 text-emerald-500 rounded-[15px] text-[10px] font-black border border-emerald-500/20 mb-0.5">
-                      <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span>TERHUBUNG (GOOGLE CLOUD READY)</span>
-                    </div>
-
-                    <div className={`flex items-center justify-between p-3 rounded-2xl border transition-colors ${
-                      darkMode ? 'bg-indigo-500/10 border-indigo-500/20' : 'bg-indigo-50 border-indigo-100'
-                    }`}>
-                      <div className="flex items-center gap-2">
-                        {user.photoURL ? (
-                          <img src={user.photoURL} className="w-8 h-8 rounded-full border border-indigo-300" referrerPolicy="no-referrer" />
-                        ) : (
-                          <User className="w-5 h-5 text-indigo-400" />
-                        )}
-                        <span className={`text-[10px] font-extrabold truncate max-w-[120px] ${darkMode ? 'text-indigo-300' : 'text-indigo-700'}`}>
-                          {user.displayName || user.email}
-                        </span>
-                      </div>
-                      <button 
-                        onClick={handleLogout}
-                        className="text-[10px] font-black text-rose-500 uppercase tracking-widest hover:text-rose-600"
-                      >
-                        Keluar
-                      </button>
-                    </div>
-                    <p className="text-[8px] text-emerald-500 font-black uppercase">✔ Progres Tersinkronisasi Otomatis</p>
-                  </div>
-                )}
-              </div>
-
-              <button
-                onClick={() => {
-                  const url = window.location.href;
-                  if (navigator.share) {
-                    navigator.share({ 
-                      title: 'Minanihongo', 
-                      text: 'Yuk belajar Bahasa Jepang di Minanihongo! Seru dan interaktif.', 
-                      url 
-                    }).catch(() => {
-                      navigator.clipboard.writeText(url);
-                      alert('Link disalin!');
-                    });
-                  } else {
-                    navigator.clipboard.writeText(url);
-                    alert('Link aplikasi disalin ke clipboard!');
+              <ProfileView
+                user={user}
+                registeredUser={registeredUser}
+                onUpdateProfile={(updated) => {
+                  if (registeredUser) {
+                    const nextProfile = { ...registeredUser, ...updated };
+                    setRegisteredUser(nextProfile);
+                    localStorage.setItem('minanihongo_registered_user', JSON.stringify(nextProfile));
+                    if (nextProfile.name) {
+                      localStorage.setItem('minanihongo_registered_name', nextProfile.name);
+                    }
                   }
                 }}
-                className={`w-full font-bold py-3 rounded-[20px] shadow-sm border transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                  darkMode 
-                  ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700' 
-                  : 'bg-white/60 hover:bg-white text-slate-700 border-slate-200'
-                }`}
-              >
-                <Share2 className="w-4 h-4 text-emerald-500" />
-                Bagikan Aplikasi
-              </button>
-
-              <button
-                onClick={startDuelSetup}
-                className={`w-full font-bold py-3 rounded-[20px] shadow-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                  darkMode 
-                  ? 'bg-slate-100 text-slate-900 hover:bg-white' 
-                  : 'bg-slate-900 text-white hover:bg-black'
-                }`}
-              >
-                <Globe className="w-4 h-4" />
-                Dunia (Online) {activeUsers.length > 0 && <span className="ml-1 w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />}
-              </button>
-
-              {user?.email === 'duta070905@gmail.com' && (
-                <button
-                  onClick={() => switchView('visitors')}
-                  className={`w-full font-bold py-3 rounded-[20px] shadow-sm border transition-all flex items-center justify-center gap-2 active:scale-95 ${
-                    darkMode 
-                    ? 'bg-slate-800/60 hover:bg-slate-800 text-slate-300 border-slate-700' 
-                    : 'bg-white/60 hover:bg-white text-slate-700 border-slate-200'
-                  }`}
-                >
-                  <Users className="w-4 h-4 text-purple-500" />
-                  Log Pengunjung ({visitors.length})
-                </button>
-              )}
-            </div>
-
-            {/* Who's Online Section */}
-            {activeUsers.length > 0 && (
-              <div className="w-full">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className={`h-px flex-grow ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`} />
-                  <p className="text-[10px] text-blue-400 font-bold uppercase tracking-[0.2em] whitespace-nowrap flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    Siapa yang Online ({activeUsers.length})
-                  </p>
-                  <div className={`h-px flex-grow ${darkMode ? 'bg-blue-500/20' : 'bg-blue-100'}`} />
-                </div>
-                <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar px-1 min-h-[48px] items-center">
-                  {activeUsers.map((u) => (
-                    <motion.div
-                      key={u.uid}
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      style={{ willChange: 'transform, opacity' }}
-                      className={`flex-shrink-0 flex flex-col items-center gap-1 p-1 rounded-2xl border transition-all ${
-                        darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-white border-slate-100'
-                      }`}
-                    >
-                      <div className="relative">
-                        {u.photo ? (
-                          <img src={u.photo} className="w-8 h-8 rounded-full border-2 border-emerald-500/30" referrerPolicy="no-referrer" />
-                        ) : (
-                          <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 border-emerald-500/30 ${darkMode ? 'bg-slate-700' : 'bg-slate-100'}`}>
-                            <User className="w-4 h-4 text-slate-400" />
-                          </div>
-                        )}
-                        <div className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-500 border-2 border-white dark:border-slate-800 rounded-full" />
-                      </div>
-                      <span className={`text-[7px] font-bold truncate max-w-[40px] ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                        {u.name.split(' ')[0]}
-                      </span>
-                    </motion.div>
-                  ))}
-                  {activeUsers.length === 0 && (
-                    <p className="text-[10px] text-slate-400 italic w-full text-center py-2">Hanya Anda yang online...</p>
-                  )}
-                </div>
-              </div>
-            )}
-
-            <div className="pt-2 w-full space-y-4">
-              {/* Mina no Nihongo Levels (1-17) */}
-              <div>
-                <div className="flex items-center gap-3 mb-2.5">
-                  <div className={`h-px flex-grow ${darkMode ? 'bg-rose-500/20' : 'bg-rose-100'}`} />
-                  <p className="text-[10px] text-rose-400 font-bold uppercase tracking-[0.2em] whitespace-nowrap">Mina no Nihongo (Level 1-17)</p>
-                  <div className={`h-px flex-grow ${darkMode ? 'bg-rose-500/20' : 'bg-rose-100'}`} />
-                </div>
-                <div className="flex gap-3 overflow-x-auto pb-3 no-scrollbar px-2 min-h-[75px] items-start">
-                  {Object.keys(levelsData)
-                    .map(Number)
-                    .filter((levelNum) => levelNum <= 17)
-                    .map((levelNum, idx) => {
-                      const mastery = Math.round(getLevelProgress(levelNum));
-                      const isMastered = mastery >= 100;
-                      const isActive = currentLevel === levelNum;
-                      return (
-                        <motion.button
-                          key={levelNum}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.05 + idx * 0.03 }}
-                          whileHover={{ y: -3, scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          style={{ willChange: 'transform' }}
-                          onClick={() => {
-                            if (isMastered) {
-                              celebrateLevel100(levelNum);
-                            } else {
-                              switchView('quiz', {
-                                levelNumber: levelNum,
-                                beforeChange: () => changeLevel(levelNum),
-                              });
-                            }
-                          }}
-                          className={`flex-shrink-0 w-14 h-14 rounded-[20px] flex flex-col items-center justify-center gap-0.5 transition-all shadow-md relative overflow-hidden group border-2 ${
-                            isActive 
-                            ? (isMastered ? 'bg-rose-500 border-amber-300 text-white ring-2 ring-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.45)]' : 'bg-rose-500 border-rose-400 text-white shadow-rose-500/25')
-                            : isMastered
-                              ? (darkMode ? 'bg-slate-800 border-amber-400/80 text-amber-300 ring-2 ring-amber-400/50 shadow-[0_0_14px_rgba(251,191,36,0.35)]' : 'bg-amber-50/90 border-amber-400 text-amber-900 ring-2 ring-amber-300/60 shadow-[0_0_14px_rgba(251,191,36,0.25)]')
-                              : darkMode 
-                                ? 'bg-slate-800 border-slate-700/80 text-slate-400 hover:border-rose-500/50 hover:text-white' 
-                                : 'bg-white border-slate-100 text-slate-500 hover:border-rose-300 hover:text-rose-500'
-                          }`}
-                        >
-                          {/* 100% Celebration Crown & Sparkles */}
-                          {isMastered && (
-                            <>
-                              <motion.span
-                                animate={{ rotate: [-8, 8, -8], scale: [1, 1.2, 1] }}
-                                transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                                className="absolute -top-1.5 -right-1.5 text-[11px] select-none z-20 filter drop-shadow"
-                                title="100% Selesai Sempurna!"
-                              >
-                                👑
-                              </motion.span>
-                              <motion.span
-                                animate={{ opacity: [0.3, 1, 0.3], scale: [0.7, 1.15, 0.7] }}
-                                transition={{ repeat: Infinity, duration: 1.8 }}
-                                className="absolute top-0.5 left-1 text-[7px] select-none pointer-events-none text-yellow-300"
-                              >
-                                ✨
-                              </motion.span>
-                            </>
-                          )}
-                          <span className="text-[8px] font-black uppercase tracking-tighter opacity-60">Lv</span>
-                          <span className={`text-lg font-black -mt-1 ${isMastered ? 'text-amber-500 dark:text-amber-300 font-extrabold' : ''}`}>{levelNum}</span>
-                          {!isMastered && mastery > 0 && (
-                            <div className="absolute top-1 right-1">
-                              <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                            </div>
-                          )}
-                          <div className={`absolute bottom-0 left-0 w-full h-1.5 ${darkMode ? 'bg-slate-900' : 'bg-slate-100'}`}>
-                            <motion.div 
-                              initial={{ width: 0 }}
-                              animate={{ width: `${Math.min(100, mastery)}%` }}
-                              className={`h-full ${
-                                isMastered 
-                                  ? 'bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 animate-pulse' 
-                                  : (isActive ? 'bg-white' : 'bg-rose-400')
-                              }`} 
-                            />
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                </div>
-              </div>
-            </div>
-
-            <div className={`w-full rounded-[32px] p-6 border transition-all duration-500 hover:shadow-xl ${
-              darkMode 
-              ? 'bg-slate-800/30 border-slate-700/50 hover:bg-slate-800/50' 
-              : 'bg-white border-slate-100 hover:border-slate-200'
-            }`}>
-              {/* Celebration Milestone Banner in Intro */}
-              {completed100Levels.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`mb-4 p-3 rounded-2xl border flex items-center justify-between gap-3 ${
-                    darkMode 
-                      ? 'bg-gradient-to-r from-amber-950/40 via-yellow-950/30 to-amber-950/40 border-amber-500/40 shadow-[0_0_15px_rgba(251,191,36,0.15)]'
-                      : 'bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/60 border-amber-300 shadow-sm'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <motion.div
-                      animate={{ rotate: [0, -10, 10, -5, 5, 0], scale: [1, 1.15, 1] }}
-                      transition={{ repeat: Infinity, duration: 2.5 }}
-                      className="w-9 h-9 rounded-xl bg-amber-400/20 border border-amber-400/40 flex items-center justify-center text-lg shadow-inner"
-                    >
-                      🏆
-                    </motion.div>
-                    <div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400">Prestasi 100%</span>
-                        <span className="text-[8px] font-black px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-900 font-mono">SEMPURNA</span>
-                      </div>
-                      <p className={`text-[10px] font-bold ${darkMode ? 'text-amber-200/90' : 'text-amber-900'}`}>
-                        {completed100Levels.length} Level telah dikuasai 100%!
-                      </p>
-                    </div>
-                  </div>
-                  <motion.button
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => celebrateLevel100(completed100Levels[0])}
-                    className="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-slate-900 text-[9.5px] font-black shadow-md flex items-center gap-1 active:scale-95 transition-all"
-                  >
-                    <span>Rayakan</span>
-                    <span>🎊</span>
-                  </motion.button>
-                </motion.div>
-              )}
-
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex flex-col">
-                  <h3 className={`text-[10px] font-black uppercase tracking-widest ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>Tingkat Penguasaan</h3>
-                  <p className={`text-[8px] font-bold ${darkMode ? 'text-slate-600' : 'text-slate-500'}`}>Berdasarkan skor terbaik Anda</p>
-                </div>
-                <div className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-rose-500/10 border border-rose-500/20">
-                  <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-                  <span className="text-[9px] font-black text-rose-500">LIVE</span>
-                </div>
-              </div>
-              <ProgressChart highScores={highScores} levelsData={levelsData} isDarkMode={darkMode} />
-              <div className={`mt-4 p-3 rounded-2xl border flex items-start gap-2 transition-colors ${
-                darkMode ? 'bg-slate-900/40 border-slate-800' : 'bg-slate-100/30 border-slate-200/50'
-              }`}>
-                <BookOpen className={`w-3.5 h-3.5 mt-0.5 ${darkMode ? 'text-slate-700' : 'text-slate-300'}`} />
-                <p className={`text-[9px] leading-relaxed italic ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                  Grafik menunjukkan persentase kata yang berhasil dikuasai di setiap level. Teruslah berlatih untuk mencapai 100%!
-                </p>
-              </div>
-            </div>
-          </motion.div>
-          ) : view === 'mode_select' ? (
-            <motion.div
-              key="mode_select"
-              custom={{ direction: slideDirection, effect: transitionEffect }}
-              variants={viewVariants}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className={`max-w-[420px] w-full rounded-[48px] shadow-2xl relative z-10 overflow-hidden border backdrop-blur-md transition-colors duration-200 flex flex-col p-6 items-center gap-5 min-h-[75vh] ${
-                darkMode 
-                ? 'bg-slate-900/95 border-slate-700/50 shadow-slate-950/50' 
-                : 'bg-white/95 border-white/40 shadow-slate-200'
-              }`}
-            >
-              <div className="flex items-center justify-between w-full">
-                {/* Tombol Kembali (Back) */}
-                <button
-                  onClick={() => {
-                    playSfx('click');
-                    switchView('intro');
-                  }}
-                  className={`w-10 h-10 rounded-2xl border transition-transform duration-75 active:scale-90 flex items-center justify-center touch-manipulation cursor-pointer ${
-                    darkMode 
-                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white' 
-                    : 'bg-white border-slate-200 text-slate-600 hover:text-rose-500 hover:border-rose-300 shadow-sm'
-                  }`}
-                  title="Kembali ke Layar Utama"
-                  aria-label="Kembali ke Layar Utama"
-                >
-                  <ArrowLeft className="w-4.5 h-4.5" />
-                </button>
-
-                {/* Grup Tombol Pengaturan & Aksesibilitas (Menggantikan 'Pilih Mode Belajar') */}
-                <div className="flex items-center gap-2" role="toolbar" aria-label="Pengaturan Cepat Tampilan">
-
-
-                  {/* Tombol Pengaturan Suara & Aksesibilitas */}
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => {
-                      playSfx('click');
-                      setShowSettingsModal(true);
-                    }}
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border transition-all shadow-sm ${
-                      darkMode 
-                      ? 'bg-slate-800 text-violet-400 border-slate-700 hover:bg-slate-700 hover:text-white' 
-                      : 'bg-white text-violet-700 border-slate-200 hover:bg-slate-50 shadow-slate-100'
-                    }`}
-                    title="Pengaturan Suara & Aksesibilitas"
-                    aria-label="Buka Pengaturan Suara dan Aksesibilitas"
-                  >
-                    <Settings className="w-4.5 h-4.5" />
-                  </motion.button>
-
-                  {/* Tombol Mode Kontras Tinggi */}
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => {
-                      const nextVal = !highContrastMode;
-                      setHighContrastMode(nextVal);
-                      playSfx('click');
-                      announce(nextVal ? "Mode Kontras Tinggi diaktifkan" : "Mode Kontras Tinggi dinonaktifkan");
-                    }}
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border transition-all shadow-sm ${
-                      highContrastMode
-                      ? 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold ring-2 ring-amber-400'
-                      : darkMode 
-                        ? 'bg-slate-800 text-amber-300 border-slate-700 hover:bg-slate-700' 
-                        : 'bg-white text-slate-800 border-slate-200 hover:bg-slate-50 shadow-slate-100'
-                    }`}
-                    title={highContrastMode ? "Mode Kontras Tinggi Aktif (WCAG AAA)" : "Mode Kontras Tinggi"}
-                    aria-label={highContrastMode ? "Nonaktifkan Mode Kontras Tinggi" : "Aktifkan Mode Kontras Tinggi (WCAG AAA)"}
-                    aria-pressed={highContrastMode}
-                  >
-                    <Contrast className="w-4.5 h-4.5" />
-                  </motion.button>
-
-                  {/* Tombol Ganti Mode Gelap/Terang */}
-                  <motion.button
-                    whileHover={{ scale: 1.08 }}
-                    whileTap={{ scale: 0.92 }}
-                    onClick={() => {
-                      const nextDark = !darkMode;
-                      setDarkMode(nextDark);
-                      playSfx('click');
-                      announce(nextDark ? "Mode Gelap aktif" : "Mode Terang aktif");
-                    }}
-                    className={`w-10 h-10 rounded-2xl flex items-center justify-center border transition-all shadow-sm ${
-                      darkMode 
-                      ? 'bg-slate-800 text-amber-400 border-slate-700 hover:bg-slate-700' 
-                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 shadow-slate-100'
-                    }`}
-                    title={darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
-                    aria-label={darkMode ? "Ganti ke Mode Terang" : "Ganti ke Mode Gelap"}
-                  >
-                    {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                  </motion.button>
-                </div>
-
-                {/* Tombol Kamus Mini */}
-                <button
-                  onClick={() => {
-                    playSfx('click');
-                    setDictionaryQuery('');
-                    switchView('dictionary');
-                  }}
-                  className={`w-10 h-10 rounded-2xl border transition-all active:scale-95 flex items-center justify-center ${
-                    darkMode 
-                    ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white' 
-                    : 'bg-white border-slate-200 text-slate-600 hover:text-rose-500 hover:border-rose-300 shadow-sm'
-                  }`}
-                  title="Kamus Mini"
-                  aria-label="Buka Kamus Mini"
-                >
-                  <BookOpen className="w-4.5 h-4.5 text-rose-500" />
-                </button>
-              </div>
-
-              {/* Japanese Landscape Banner (Top) */}
-              <div className={`relative w-full aspect-[16/9.5] rounded-3xl overflow-hidden shadow-md border-2 ${
-                darkMode ? 'border-slate-800/80 shadow-slate-950/30' : 'border-slate-100 shadow-slate-100/60'
-              }`}>
-                <img 
-                  src="https://images.unsplash.com/photo-1503899036084-c55cdd92da26?q=80&w=800&auto=format&fit=crop" 
-                  alt="Gunung Fuji Jepang" 
-                  className="w-full h-full object-cover select-none pointer-events-none"
-                  referrerPolicy="no-referrer"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
-                <div className="absolute bottom-3 left-4 right-4 text-left z-20">
-                  <span className="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[8px] font-black tracking-wider uppercase">Jepang</span>
-                  <p className="text-white text-xs font-black mt-1">日本語のレッスン (Pelajaran Bahasa Jepang)</p>
-                </div>
-              </div>
-
-              {/* Three Option Buttons: Kuis Kosakata, Kuis Kanji, Menu Huruf */}
-              <div className="grid grid-cols-3 gap-2 w-full">
-                {/* Kuis Kosakata */}
-                <button
-                  id="mode-btn-vocab"
-                  onClick={() => {
-                    playSfx('click');
-                    setActiveMode('vocab');
-                  }}
-                  className={`p-2 py-2.5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 select-none relative overflow-hidden group ${
-                    activeMode === 'vocab'
-                    ? 'bg-rose-500/10 border-rose-500 shadow-md shadow-rose-500/10 scale-[1.02]'
-                    : darkMode
-                      ? 'bg-slate-800/40 border-slate-700/80 text-slate-400 hover:border-slate-600'
-                      : 'bg-white border-slate-200/80 text-slate-500 hover:border-slate-300 shadow-xs'
-                  }`}
-                >
-                  <div className={`p-1.5 rounded-xl ${
-                    activeMode === 'vocab' ? 'bg-rose-500 text-white' : darkMode ? 'bg-slate-700 text-slate-400' : 'bg-rose-50 text-rose-500'
-                  } transition-colors`}>
-                    <BookOpen className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className={`font-black text-[10.5px] leading-tight tracking-tight ${
-                      activeMode === 'vocab' ? (darkMode ? 'text-white' : 'text-slate-900') : darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}>
-                      Kosakata
-                    </p>
-                    <p className={`text-[7.5px] font-semibold mt-0.5 leading-tight ${activeMode === 'vocab' ? 'text-rose-400' : 'text-slate-500'}`}>
-                      Mina Lv 1-17
-                    </p>
-                  </div>
-                </button>
-
-                {/* Kuis Kanji */}
-                <button
-                  id="mode-btn-kanji"
-                  onClick={() => {
-                    playSfx('click');
-                    setActiveMode('kanji');
-                  }}
-                  className={`p-2 py-2.5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 select-none relative overflow-hidden group ${
-                    activeMode === 'kanji'
-                    ? 'bg-purple-500/10 border-purple-500 shadow-md shadow-purple-500/10 scale-[1.02]'
-                    : darkMode
-                      ? 'bg-slate-800/40 border-slate-700/80 text-slate-400 hover:border-slate-600'
-                      : 'bg-white border-slate-200/80 text-slate-500 hover:border-slate-300 shadow-xs'
-                  }`}
-                >
-                  <div className={`p-1.5 rounded-xl ${
-                    activeMode === 'kanji' ? 'bg-purple-600 text-white' : darkMode ? 'bg-slate-700 text-slate-400' : 'bg-purple-50 text-purple-600'
-                  } transition-colors`}>
-                    <span className="text-xs font-black">🈁</span>
-                  </div>
-                  <div>
-                    <p className={`font-black text-[10.5px] leading-tight tracking-tight ${
-                      activeMode === 'kanji' ? (darkMode ? 'text-white' : 'text-slate-900') : darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}>
-                      Kuis Kanji
-                    </p>
-                    <p className={`text-[7.5px] font-semibold mt-0.5 leading-tight ${activeMode === 'kanji' ? 'text-purple-400' : 'text-slate-500'}`}>
-                      580 Kanji JFT
-                    </p>
-                  </div>
-                </button>
-
-                {/* Tombol HURUF */}
-                <button
-                  id="mode-btn-letters"
-                  onClick={() => {
-                    playSfx('click');
-                    setActiveMode('letters');
-                  }}
-                  className={`p-2 py-2.5 rounded-2xl border-2 transition-all flex flex-col items-center text-center gap-1 select-none relative overflow-hidden group ${
-                    activeMode === 'letters'
-                    ? 'bg-emerald-500/10 border-emerald-500 shadow-md shadow-emerald-500/10 scale-[1.02]'
-                    : darkMode
-                      ? 'bg-slate-800/40 border-slate-700/80 text-slate-400 hover:border-slate-600'
-                      : 'bg-white border-slate-200/80 text-slate-500 hover:border-slate-300 shadow-xs'
-                  }`}
-                >
-                  <div className={`p-1.5 rounded-xl ${
-                    activeMode === 'letters' ? 'bg-emerald-500 text-white' : darkMode ? 'bg-slate-700 text-slate-400' : 'bg-emerald-50 text-emerald-600'
-                  } transition-colors`}>
-                    <Languages className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <p className={`font-black text-[10.5px] leading-tight tracking-tight ${
-                      activeMode === 'letters' ? (darkMode ? 'text-white' : 'text-slate-900') : darkMode ? 'text-slate-300' : 'text-slate-700'
-                    }`}>
-                      HURUF
-                    </p>
-                    <p className={`text-[7.5px] font-semibold mt-0.5 leading-tight ${activeMode === 'letters' ? 'text-emerald-500' : 'text-slate-500'}`}>
-                      Kana & Stroke
-                    </p>
-                  </div>
-                </button>
-              </div>
-
-              {/* Dynamic Level Slider / List */}
-              <AnimatePresence mode="wait" initial={false}>
-                {activeMode === 'vocab' ? (
-                  <motion.div
-                    key="vocab-grid"
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: { duration: 0 } }}
-                    transition={{ duration: 0.04, ease: "easeOut" }}
-                    className="w-full flex-grow flex flex-col items-stretch"
-                  >
-                    {/* Celebration Milestone Banner in Mode Select */}
-                    {completed100Levels.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: -6 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className={`mb-2 p-2 px-3 rounded-2xl border flex items-center justify-between gap-2 shadow-xs ${
-                          darkMode
-                            ? 'bg-gradient-to-r from-amber-950/40 via-yellow-950/25 to-amber-950/40 border-amber-500/40'
-                            : 'bg-gradient-to-r from-amber-50 via-yellow-50 to-amber-100/70 border-amber-300'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <motion.span
-                            animate={{ rotate: [-8, 8, -8], scale: [1, 1.2, 1] }}
-                            transition={{ repeat: Infinity, duration: 2 }}
-                            className="text-sm select-none"
-                          >
-                            🏆
-                          </motion.span>
-                          <div>
-                            <p className={`text-[9.5px] font-black leading-tight ${darkMode ? 'text-amber-300' : 'text-amber-900'}`}>
-                              {completed100Levels.length} Level 100% Sempurna!
-                            </p>
-                            <p className={`text-[7.5px] font-semibold ${darkMode ? 'text-amber-200/70' : 'text-amber-700'}`}>
-                              Pencapaian luar biasa tanpa kesalahan 👑
-                            </p>
-                          </div>
-                        </div>
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          onClick={() => celebrateLevel100(completed100Levels[0])}
-                          className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-slate-900 text-[8.5px] font-black shadow-xs flex items-center gap-1 active:scale-95"
-                        >
-                          <span>Rayakan</span>
-                          <span>🎊</span>
-                        </motion.button>
-                      </motion.div>
-                    )}
-
-                    <div className="flex items-center justify-between mb-2 px-1">
-                      <span className={`text-[9.5px] font-black uppercase tracking-wider ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                        Mina No Nihongo (Lv 1-17):
-                      </span>
-                      <span className="text-[8.5px] font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded-full">
-                        Pilih Level Kuis
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2.5 max-h-[165px] overflow-y-auto pr-1 no-scrollbar pb-1">
-                      {Object.keys(levelsData)
-                        .map(Number)
-                        .filter((levelNum) => levelNum <= 17)
-                        .map((levelNum, index) => {
-                          const mastery = Math.round(getLevelProgress(levelNum));
-                          const isMastered = mastery >= 100;
-                          const isActive = currentLevel === levelNum;
-                          return (
-                            <motion.button
-                              key={levelNum}
-                              initial={{ opacity: 0, scale: 0.72, y: 15 }}
-                              animate={isActive ? {
-                                opacity: 1,
-                                y: 0,
-                                scale: [1, 1.05, 1],
-                                boxShadow: darkMode
-                                  ? ["0px 0px 0px rgba(244,63,94,0)", "0px 0px 10px rgba(244,63,94,0.45)", "0px 0px 0px rgba(244,63,94,0)"]
-                                  : ["0px 0px 0px rgba(244,63,94,0)", "0px 0px 10px rgba(244,63,94,0.35)", "0px 0px 0px rgba(244,63,94,0)"]
-                              } : {
-                                opacity: 1,
-                                y: 0,
-                                scale: 1,
-                                boxShadow: "0px 1px 2px rgba(0,0,0,0.05)"
-                              }}
-                              transition={isActive ? {
-                                opacity: { type: "spring", stiffness: 220, damping: 16, delay: index * 0.025 },
-                                y: { type: "spring", stiffness: 220, damping: 16, delay: index * 0.025 },
-                                scale: { repeat: Infinity, duration: 2, ease: "easeInOut" },
-                                boxShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" }
-                              } : {
-                                opacity: { type: "spring", stiffness: 220, damping: 16, delay: index * 0.025 },
-                                y: { type: "spring", stiffness: 220, damping: 16, delay: index * 0.025 },
-                                scale: { duration: 0.15 },
-                                boxShadow: { duration: 0.15 }
-                              }}
-                              whileHover={{ scale: 1.08, y: -2, zIndex: 10 }}
-                              whileTap={{ scale: 0.95 }}
-                              onClick={() => {
-                                if (isMastered) {
-                                  playSfx('win');
-                                  triggerConfetti(2500);
-                                  showToast(`🎉 Level ${levelNum} 100% Selesai Sempurna! 👑`, 'success');
-                                }
-                                switchView('quiz', {
-                                  levelNumber: levelNum,
-                                  beforeChange: () => changeLevel(levelNum),
-                                });
-                              }}
-                              className={`h-[52px] rounded-2xl flex flex-col items-center justify-center gap-0.5 relative overflow-hidden border-2 transition-all shadow-sm ${
-                                isActive
-                                ? (isMastered ? 'bg-rose-500 border-amber-300 text-white ring-2 ring-amber-400 shadow-[0_0_15px_rgba(251,191,36,0.45)]' : 'bg-rose-500 border-rose-400 text-white')
-                                : isMastered
-                                  ? (darkMode ? 'bg-slate-800/90 border-amber-400/80 text-slate-200 ring-2 ring-amber-400/50 shadow-[0_0_14px_rgba(251,191,36,0.35)]' : 'bg-amber-50/90 border-amber-400 text-slate-800 ring-2 ring-amber-300/60 shadow-[0_0_14px_rgba(251,191,36,0.25)]')
-                                  : darkMode
-                                    ? 'bg-slate-800/80 border-slate-700 text-slate-300 hover:border-rose-500/40 hover:text-white'
-                                    : 'bg-white border-slate-150 text-slate-600 hover:border-rose-400/40 hover:text-rose-500'
-                              }`}
-                            >
-                              {/* 100% Celebration Crown & Sparkles */}
-                              {isMastered && (
-                                <>
-                                  <motion.span
-                                    animate={{ rotate: [-6, 6, -6], scale: [1, 1.2, 1] }}
-                                    transition={{ repeat: Infinity, duration: 1.8 }}
-                                    className="absolute -top-1 -right-1 text-[11px] z-20 select-none filter drop-shadow"
-                                    title="Level 100% Selesai Sempurna!"
-                                  >
-                                    👑
-                                  </motion.span>
-                                  <motion.span
-                                    animate={{ opacity: [0.3, 1, 0.3], scale: [0.7, 1.1, 0.7] }}
-                                    transition={{ repeat: Infinity, duration: 1.6 }}
-                                    className="absolute top-1 left-1.5 text-[7px] select-none pointer-events-none text-yellow-300"
-                                  >
-                                    ✨
-                                  </motion.span>
-                                </>
-                              )}
-
-                              {/* Floating Sparkle Emots for Active */}
-                              {isActive && !isMastered && (
-                                <>
-                                  <motion.span
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: [0, 1, 0], scale: [0.5, 1, 0.5], x: [-12, 12], y: [10, -20] }}
-                                    transition={{ repeat: Infinity, duration: 1.8, delay: 0.1 }}
-                                    className="absolute pointer-events-none text-[8px] select-none text-yellow-300 left-1/2"
-                                  >
-                                    ✨
-                                  </motion.span>
-                                  <motion.span
-                                    initial={{ opacity: 0, scale: 0 }}
-                                    animate={{ opacity: [0, 0.8, 0], scale: [0.4, 0.8, 0.4], x: [8, -8], y: [10, -15] }}
-                                    transition={{ repeat: Infinity, duration: 1.5, delay: 0.7 }}
-                                    className="absolute pointer-events-none text-[8px] select-none text-yellow-200 left-1/3"
-                                  >
-                                    ⭐
-                                  </motion.span>
-                                </>
-                              )}
-
-                              <div className="flex items-center gap-1 z-10">
-                                <motion.span 
-                                  animate={isActive ? {
-                                    y: [0, -3, 0],
-                                    rotate: [0, 8, -8, 0],
-                                    scale: [1, 1.2, 1],
-                                  } : { y: 0, rotate: 0, scale: 1 }}
-                                  transition={isActive ? {
-                                    repeat: Infinity,
-                                    duration: 1.5,
-                                    ease: "easeInOut"
-                                  } : {}}
-                                  className="text-[13px]"
-                                >
-                                  {levelsData[levelNum].icon}
-                                </motion.span>
-                                <div className="flex flex-col items-start leading-none">
-                                  <span className="text-[6.5px] opacity-70 font-black uppercase">Lv</span>
-                                  <span className={`text-[11px] font-black leading-tight ${isMastered ? 'text-amber-500 dark:text-amber-300' : ''}`}>{levelNum}</span>
-                                </div>
-                              </div>
-
-                              {mastery > 0 && (
-                                <span className={`text-[6.5px] font-black z-10 ${
-                                  isMastered 
-                                    ? (isActive ? 'text-amber-200 font-extrabold' : 'text-amber-500 font-extrabold')
-                                    : (isActive ? 'text-white/80' : 'text-emerald-500 font-bold')
-                                }`}>
-                                  {isMastered ? '⭐ 100%' : `${mastery}%`}
-                                </span>
-                              )}
-                              <div className="absolute bottom-0 inset-x-0 h-0.5 bg-black/10">
-                                <div 
-                                  className={`h-full transition-all duration-300 ${
-                                    isMastered 
-                                      ? 'bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-500 animate-pulse' 
-                                      : 'bg-emerald-400'
-                                  }`} 
-                                  style={{ width: `${Math.min(100, mastery)}%` }} 
-                                />
-                              </div>
-                            </motion.button>
-                          );
-                        })}
-                    </div>
-                  </motion.div>
-                ) : activeMode === 'kanji' ? (
-                  <motion.div
-                    key="kanji-hub-options"
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: { duration: 0 } }}
-                    transition={{ duration: 0.04, ease: "easeOut" }}
-                    className="w-full flex-grow flex flex-col justify-center gap-2.5 py-1"
-                  >
-                    {/* Header bar */}
-                    <div className="flex items-center justify-between px-1">
-                      <span className={`text-[9.5px] font-black uppercase tracking-wider ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                        FITUR KANJI HUB (580 KANJI):
-                      </span>
-                      <button
-                        onClick={() => {
-                          playSfx('click');
-                          setKanjiHubInitialTab('quiz');
-                          switchView('kanji_hub');
-                        }}
-                        className="text-[8.5px] font-bold text-purple-500 bg-purple-500/10 px-2 py-0.5 rounded-full hover:bg-purple-500/20 transition-all flex items-center gap-1"
-                      >
-                        <span>Buka Hub Penuh</span>
-                        <span>➔</span>
-                      </button>
-                    </div>
-
-                    {/* 4 Pilihan Mode Kanji Hub */}
-                    <div className="grid grid-cols-2 gap-2.5 w-full">
-                      {/* Pilihan 1: Kuis Pilihan Ganda */}
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          playSfx('click');
-                          setKanjiHubInitialTab('quiz');
-                          switchView('kanji_hub');
-                        }}
-                        className={`p-3 py-3.5 rounded-[22px] border-2 transition-all flex flex-col items-center text-center gap-1.5 relative overflow-hidden group shadow-sm ${
-                          darkMode
-                            ? 'bg-slate-800/70 border-slate-700/80 hover:border-purple-500 text-slate-200'
-                            : 'bg-white border-slate-200 hover:border-purple-400 text-slate-800'
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black text-lg shadow-sm shadow-purple-600/20 group-hover:scale-110 transition-transform">
-                          🎯
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-1">
-                            <h4 className="font-black text-xs">Kuis Kanji</h4>
-                            <span className="text-[7.5px] px-1 py-0.2 rounded font-extrabold bg-purple-500/10 text-purple-600 dark:text-purple-400">
-                              Pilihan Ganda
-                            </span>
-                          </div>
-                          <p className={`text-[8px] font-medium mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Kuis arti, bacaan & skor live
-                          </p>
-                        </div>
-                        <span className="text-[8.5px] font-black text-purple-600 dark:text-purple-400 bg-purple-500/10 px-2.5 py-0.5 rounded-full">
-                          Mulai Kuis ➔
-                        </span>
-                      </motion.button>
-
-                      {/* Pilihan 2: Flashcard 3D */}
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          playSfx('click');
-                          setKanjiHubInitialTab('flashcards');
-                          switchView('kanji_hub');
-                        }}
-                        className={`p-3 py-3.5 rounded-[22px] border-2 transition-all flex flex-col items-center text-center gap-1.5 relative overflow-hidden group shadow-sm ${
-                          darkMode
-                            ? 'bg-slate-800/70 border-slate-700/80 hover:border-amber-500 text-slate-200'
-                            : 'bg-white border-slate-200 hover:border-amber-400 text-slate-800'
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center font-black text-lg shadow-sm shadow-amber-500/20 group-hover:scale-110 transition-transform">
-                          🗂️
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-1">
-                            <h4 className="font-black text-xs">Flashcard 3D</h4>
-                            <span className="text-[7.5px] px-1 py-0.2 rounded font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                              Hafalan
-                            </span>
-                          </div>
-                          <p className={`text-[8px] font-medium mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Kartu bolak-balik & audio lafal
-                          </p>
-                        </div>
-                        <span className="text-[8.5px] font-black text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full">
-                          Buka Kartu ➔
-                        </span>
-                      </motion.button>
-
-                      {/* Pilihan 3: Kamus 580 Kanji */}
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          playSfx('click');
-                          setKanjiHubInitialTab('dictionary');
-                          switchView('kanji_hub');
-                        }}
-                        className={`p-3 py-3.5 rounded-[22px] border-2 transition-all flex flex-col items-center text-center gap-1.5 relative overflow-hidden group shadow-sm ${
-                          darkMode
-                            ? 'bg-slate-800/70 border-slate-700/80 hover:border-blue-500 text-slate-200'
-                            : 'bg-white border-slate-200 hover:border-blue-400 text-slate-800'
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-black text-lg shadow-sm shadow-blue-600/20 group-hover:scale-110 transition-transform">
-                          📖
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-1">
-                            <h4 className="font-black text-xs">Kamus 580</h4>
-                            <span className="text-[7.5px] px-1 py-0.2 rounded font-extrabold bg-blue-500/10 text-blue-600 dark:text-blue-400">
-                              Daftar Lengkap
-                            </span>
-                          </div>
-                          <p className={`text-[8px] font-medium mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Cari kanji, arti, & furigana
-                          </p>
-                        </div>
-                        <span className="text-[8.5px] font-black text-blue-600 dark:text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full">
-                          Cari Kanji ➔
-                        </span>
-                      </motion.button>
-
-                      {/* Pilihan 4: Papan Tulis Kanji */}
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          playSfx('click');
-                          setKanjiHubInitialTab('practice_write');
-                          switchView('kanji_hub');
-                        }}
-                        className={`p-3 py-3.5 rounded-[22px] border-2 transition-all flex flex-col items-center text-center gap-1.5 relative overflow-hidden group shadow-sm ${
-                          darkMode
-                            ? 'bg-slate-800/70 border-slate-700/80 hover:border-emerald-500 text-slate-200'
-                            : 'bg-white border-slate-200 hover:border-emerald-400 text-slate-800'
-                        }`}
-                      >
-                        <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-black text-lg shadow-sm shadow-emerald-600/20 group-hover:scale-110 transition-transform">
-                          ✍️
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-1">
-                            <h4 className="font-black text-xs">Papan Tulis</h4>
-                            <span className="text-[7.5px] px-1 py-0.2 rounded font-extrabold bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-                              Coret Kanji
-                            </span>
-                          </div>
-                          <p className={`text-[8px] font-medium mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Latihan gambar & stroke kanji
-                          </p>
-                        </div>
-                        <span className="text-[8.5px] font-black text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-full">
-                          Tulis Kanji ➔
-                        </span>
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div
-                    key="letters-options"
-                    initial={{ opacity: 0.9 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: { duration: 0 } }}
-                    transition={{ duration: 0.04, ease: "easeOut" }}
-                    className="w-full flex-grow flex flex-col justify-center gap-2.5 py-1"
-                  >
-                    <div className="flex items-center justify-between px-1">
-                      <span className={`text-[9.5px] font-black uppercase tracking-wider ${darkMode ? 'text-slate-500' : 'text-slate-400'}`}>
-                        PILIHAN BELAJAR HURUF:
-                      </span>
-                      <span className="text-[8.5px] font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
-                        Hiragana & Katakana
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5 w-full">
-                      {/* Pilihan 1: Membaca */}
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          playSfx('click');
-                          switchView('kana_reading');
-                        }}
-                        className={`p-3.5 py-4 rounded-[22px] border-2 transition-all flex flex-col items-center text-center gap-2 relative overflow-hidden group shadow-sm ${
-                          darkMode
-                            ? 'bg-slate-800/70 border-slate-700/80 hover:border-rose-500 text-slate-200'
-                            : 'bg-white border-slate-200 hover:border-rose-400 text-slate-800'
-                        }`}
-                      >
-                        <div className="w-11 h-11 rounded-2xl bg-rose-500 text-white flex items-center justify-center font-black text-xl shadow-sm shadow-rose-500/20 group-hover:scale-110 transition-transform">
-                          📖
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-1">
-                            <h4 className="font-black text-xs">Membaca</h4>
-                            <span className="text-[7.5px] px-1 py-0.2 rounded font-extrabold bg-rose-500/10 text-rose-500">
-                              Kana
-                            </span>
-                          </div>
-                          <p className={`text-[8.5px] font-medium mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Tabel huruf, audio lafal, & kuis baca
-                          </p>
-                        </div>
-                        <span className="text-[9px] font-black text-rose-500 bg-rose-500/10 px-2.5 py-0.5 rounded-full mt-0.5">
-                          Mulai Baca ➔
-                        </span>
-                      </motion.button>
-
-                      {/* Pilihan 2: Menulis */}
-                      <motion.button
-                        whileHover={{ scale: 1.02, y: -2 }}
-                        whileTap={{ scale: 0.97 }}
-                        onClick={() => {
-                          playSfx('click');
-                          switchView('kana_writing');
-                        }}
-                        className={`p-3.5 py-4 rounded-[22px] border-2 transition-all flex flex-col items-center text-center gap-2 relative overflow-hidden group shadow-sm ${
-                          darkMode
-                            ? 'bg-slate-800/70 border-slate-700/80 hover:border-emerald-500 text-slate-200'
-                            : 'bg-white border-slate-200 hover:border-emerald-400 text-slate-800'
-                        }`}
-                      >
-                        <div className="w-11 h-11 rounded-2xl bg-emerald-500 text-white flex items-center justify-center font-black text-xl shadow-sm shadow-emerald-500/20 group-hover:scale-110 transition-transform">
-                          ✍️
-                        </div>
-                        <div>
-                          <div className="flex items-center justify-center gap-1">
-                            <h4 className="font-black text-xs">Menulis</h4>
-                            <span className="text-[7.5px] px-1 py-0.2 rounded font-extrabold bg-emerald-500/10 text-emerald-600">
-                              Stroke
-                            </span>
-                          </div>
-                          <p className={`text-[8.5px] font-medium mt-0.5 ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                            Papan kanvas interaktif & pola huruf
-                          </p>
-                        </div>
-                        <span className="text-[9px] font-black text-emerald-600 bg-emerald-500/10 px-2.5 py-0.5 rounded-full mt-0.5">
-                          Mulai Tulis ➔
-                        </span>
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              {/* ANIMATED KOI POND (Bottom) */}
-              <div className="w-full">
-                <KoiPond />
-              </div>
-
+                onLogout={handleLogout}
+                onBackToHome={() => switchView('intro')}
+                onOpenSettings={() => setShowSettingsModal(true)}
+                onOpenNotifications={() => setShowNotificationModal(true)}
+                onNavigateTab={(tab) => {
+                  if (tab === 'home') switchView('intro');
+                  else if (tab === 'vocab') switchView('dictionary');
+                  else if (tab === 'quiz') switchView('quiz');
+                  else if (tab === 'profile') switchView('profile');
+                }}
+                darkMode={darkMode}
+                setDarkMode={setDarkMode}
+                playSfx={playSfx}
+                favorites={favorites}
+                levelsData={levelsData}
+                getLevelProgress={getLevelProgress}
+                userXp={userXp}
+              />
             </motion.div>
           ) : view === 'duel_setup' ? (
             <motion.div
@@ -4419,7 +3104,7 @@ export default function App() {
                     const mastery = getLevelProgress(levelNum);
                     return (
                       <motion.button
-                        key={levelNum}
+                        key={`duel-select-lvl-${levelNum}`}
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => {
@@ -4572,7 +3257,7 @@ export default function App() {
               ) : (
                 <div className="space-y-2">
                   {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((level) => (
-                    <div key={level} className={`flex items-center justify-between p-4 rounded-2xl border transition-colors ${
+                    <div key={`leaderboard-lvl-${level}`} className={`flex items-center justify-between p-4 rounded-2xl border transition-colors ${
                       darkMode ? 'bg-slate-800/40 border-slate-700/50' : 'bg-slate-50 border-slate-100'
                     }`}>
                       <div className="flex items-center gap-3">
@@ -4651,7 +3336,7 @@ export default function App() {
               <div className="space-y-3">
                 {visitors.map((v, i) => (
                   <motion.div 
-                    key={v.id} 
+                    key={`visitor-log-${v.id || i}-${i}`} 
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.05 }}
@@ -4719,7 +3404,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     playSfx('click');
-                    switchView('mode_select');
+                    switchView('intro');
                   }}
                   className={`p-2 rounded-full border transition-all ${
                     darkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 shadow-sm'
@@ -4955,7 +3640,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     playSfx('click');
-                    switchView('mode_select');
+                    switchView('intro');
                   }}
                   className={`p-2 rounded-full border transition-all ${
                     darkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 shadow-sm'
@@ -5036,262 +3721,21 @@ export default function App() {
               initial="initial"
               animate="animate"
               exit="exit"
-              className={`max-w-[420px] w-full rounded-[48px] shadow-2xl relative z-10 overflow-hidden border backdrop-blur-2xl transition-colors duration-200 flex flex-col min-h-[75vh] ${
-                darkMode 
-                ? 'bg-slate-900/95 border-slate-700/50 shadow-slate-950/50' 
-                : 'bg-white/95 border-white/40 shadow-slate-200'
-              }`}
+              className="w-full flex justify-center"
             >
-              <div className="p-6 pb-4 flex items-center justify-between border-b border-slate-500/10">
-                <button
-                  onClick={() => {
-                    playSfx('click');
-                    switchView('mode_select');
-                  }}
-                  className={`p-2 rounded-full border transition-all ${
-                    darkMode ? 'bg-slate-800 border-slate-700 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-200 shadow-sm'
-                  }`}
-                >
-                  <ArrowLeft className="w-4 h-4" />
-                </button>
-                <div className="text-center">
-                  <h2 className={`text-md font-black ${darkMode ? 'text-white' : 'text-slate-800'} flex items-center gap-1.5 justify-center`}>
-                    📖 Kamus Mini & Kanji 580
-                  </h2>
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                    Cari Kosakata & 580 Kanji Irodori
-                  </p>
-                </div>
-                <div className="w-8" />
-              </div>
-
-              {/* Dictionary Category Selector Tabs */}
-              <div className="px-6 pt-3 flex items-center justify-center gap-1.5">
-                <button
-                  id="dict-tab-all"
-                  onClick={() => {
-                    playSfx('click');
-                    setDictionaryTab('all');
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    dictionaryTab === 'all'
-                      ? 'bg-rose-500 text-white shadow-xs'
-                      : darkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Semua
-                </button>
-                <button
-                  id="dict-tab-vocab"
-                  onClick={() => {
-                    playSfx('click');
-                    setDictionaryTab('vocab');
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
-                    dictionaryTab === 'vocab'
-                      ? 'bg-rose-500 text-white shadow-xs'
-                      : darkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  Kosakata (Mina)
-                </button>
-                <button
-                  id="dict-tab-kanji"
-                  onClick={() => {
-                    playSfx('click');
-                    setDictionaryTab('kanji');
-                  }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1 ${
-                    dictionaryTab === 'kanji'
-                      ? 'bg-purple-600 text-white shadow-xs'
-                      : darkMode ? 'bg-slate-800 text-slate-400 hover:text-white' : 'bg-slate-100 text-slate-600 hover:text-slate-900'
-                  }`}
-                >
-                  <span>🈁</span>
-                  <span>Kanji 580</span>
-                </button>
-              </div>
-
-              {/* Real-time search bar */}
-              <div className="p-6 pt-3 pb-3">
-                <div className="relative w-full">
-                  <input
-                    type="text"
-                    value={dictionaryQuery}
-                    onChange={(e) => setDictionaryQuery(e.target.value)}
-                    placeholder="Cari kata, kanji, arti, atau cara baca..."
-                    maxLength={100}
-                    className={`w-full font-bold px-5 py-3 rounded-3xl border focus:outline-none focus:ring-2 focus:ring-rose-500 relative z-10 text-xs transition-colors ${
-                      darkMode 
-                      ? 'bg-slate-800 border-slate-700 text-white placeholder-slate-500' 
-                      : 'bg-slate-50 border-slate-200 text-slate-800 placeholder-slate-400 shadow-inner'
-                    }`}
-                  />
-                  {dictionaryQuery && (
-                    <button
-                      onClick={() => setDictionaryQuery('')}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-xs text-slate-400 hover:text-rose-500 z-20"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-              </div>
-
-              {/* Dynamic Dictionary list explorer */}
-              <div className="flex-grow px-6 overflow-y-auto max-h-[46vh] no-scrollbar pb-6 animate-fade-in">
-                <div className="space-y-2.5">
-                  {(() => {
-                    type UnifiedDictItem = {
-                      id: string;
-                      type: 'vocab' | 'kanji';
-                      jpn: string;
-                      reading?: string;
-                      ind: string;
-                      levelName: string;
-                      icon: string;
-                      badgeColor: string;
-                    };
-
-                    const combinedList: UnifiedDictItem[] = [];
-
-                    // 1. Minna no Nihongo vocab
-                    if (dictionaryTab === 'all' || dictionaryTab === 'vocab') {
-                      Object.keys(levelsData).forEach((lKey) => {
-                        const lNum = Number(lKey);
-                        const lData = levelsData[lNum];
-                        if (lData && lData.vocab) {
-                          lData.vocab.forEach((v, vIdx) => {
-                            combinedList.push({
-                              id: `vocab-${lNum}-${vIdx}`,
-                              type: 'vocab',
-                              jpn: v.jpn,
-                              reading: v.reading,
-                              ind: v.ind,
-                              levelName: lData.name.split(' (')[0],
-                              icon: lData.icon,
-                              badgeColor: 'bg-rose-500/10 text-rose-500',
-                            });
-                          });
-                        }
-                      });
-                    }
-
-                    // 2. Irodori 580 Kanji
-                    if (dictionaryTab === 'all' || dictionaryTab === 'kanji') {
-                      IRODORI_KANJI_LIST.forEach((k) => {
-                        combinedList.push({
-                          id: `kanji-${k.id}`,
-                          type: 'kanji',
-                          jpn: k.kanji,
-                          reading: k.reading,
-                          ind: k.meaning,
-                          levelName: `Kanji Bab ${k.lesson}`,
-                          icon: k.tier === 'nyuumon' ? '🌱' : k.tier === 'shokyuu1' ? '⚡' : '👑',
-                          badgeColor: 'bg-purple-500/15 text-purple-600 dark:text-purple-400',
-                        });
-                      });
-                    }
-
-                    // Search filtering
-                    const cleanedQuery = dictionaryQuery.toLowerCase().trim();
-                    const filtered = combinedList.filter((item) => {
-                      if (!cleanedQuery) return dictionaryTab !== 'all';
-                      return (
-                        item.jpn.toLowerCase().includes(cleanedQuery) ||
-                        (item.reading && item.reading.toLowerCase().includes(cleanedQuery)) ||
-                        item.ind.toLowerCase().includes(cleanedQuery)
-                      );
-                    });
-
-                    if (!dictionaryQuery && dictionaryTab === 'all') {
-                      return (
-                        <div className="py-12 flex flex-col items-center text-center opacity-70">
-                          <span className="text-4xl mb-3">🎏</span>
-                          <p className="text-xs font-black uppercase tracking-widest text-slate-400">KAMUS KOSAKATA & 580 KANJI</p>
-                          <p className="text-[10px] text-slate-500 mt-1 max-w-[260px] leading-relaxed">
-                            Ketik kata bahasa Jepang, kanji, romaji, atau arti bahasa Indonesia untuk mulai mencari.
-                          </p>
-                        </div>
-                      );
-                    }
-
-                    if (filtered.length === 0) {
-                      return (
-                        <div className="py-12 flex flex-col items-center text-center opacity-50">
-                          <span className="text-3xl mb-3">🔍</span>
-                          <p className="text-xs font-black uppercase text-slate-400">Kata Tidak Ditemukan</p>
-                          <p className="text-[10px] text-slate-500 mt-1">Coba kata penelusuran lainnya</p>
-                        </div>
-                      );
-                    }
-
-                    return filtered.slice(0, 100).map((v, i) => {
-                      const isFav = isFavorited({ jpn: v.jpn, ind: v.ind });
-                      return (
-                        <motion.div
-                          key={v.id}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ delay: Math.min(i * 0.02, 0.3) }}
-                          className={`p-3.5 rounded-2xl border transition-all flex justify-between items-center ${
-                            darkMode 
-                            ? 'bg-slate-800/40 border-slate-700/60 hover:bg-slate-800/80 shadow-slate-950/20' 
-                            : 'bg-slate-50 border-slate-150 hover:bg-white shadow-xs'
-                          }`}
-                        >
-                          <div className="flex-1 min-w-0 pr-3 text-left">
-                            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                              <span className="text-sm leading-none">{v.icon}</span>
-                              <span className={`text-[7.5px] font-extrabold tracking-wider uppercase px-2 py-0.5 rounded-full ${v.badgeColor}`}>
-                                {v.levelName}
-                              </span>
-                            </div>
-
-                            <p className={`text-base font-extrabold tracking-tight truncate leading-tight ${darkMode ? 'text-white' : 'text-slate-900'}`} translate="no">
-                              {v.jpn}
-                            </p>
-                            {v.reading && (
-                              <p className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 leading-tight mt-0.5" translate="no">
-                                {v.reading}
-                              </p>
-                            )}
-                            <p className="text-xs font-medium text-slate-500 mt-0.5 truncate">
-                              {v.ind}
-                            </p>
-                          </div>
-
-                          <div className="flex gap-1.5 items-center">
-                            <button
-                              onClick={() => {
-                                playSfx('click');
-                                speakJapanese(v.jpn);
-                              }}
-                              className={`p-2 rounded-full ${
-                                darkMode ? 'bg-slate-700 text-slate-300 hover:bg-slate-650' : 'bg-rose-100/60 text-rose-500 hover:bg-rose-100 shadow-xs'
-                              } transition-colors active:scale-[0.93]`}
-                              title="Dengar Lafal"
-                            >
-                              <Volume2 className="w-3.5 h-3.5" />
-                            </button>
-
-                            <button
-                              onClick={() => {
-                                playSfx('click');
-                                toggleFavorite({ jpn: v.jpn, ind: v.ind });
-                              }}
-                              className="p-2 rounded-full text-amber-500"
-                              title="Simpan Favorit"
-                            >
-                              <Star className={`w-3.5 h-3.5 ${isFav ? 'fill-amber-400' : ''}`} />
-                            </button>
-                          </div>
-                        </motion.div>
-                      );
-                    });
-                  })()}
-                </div>
-              </div>
+              <DictionaryView
+                darkMode={darkMode}
+                levelsData={levelsData}
+                onBack={() => switchView('intro')}
+                onOpenMenu={() => switchView('intro')}
+                onStartStudy={() => switchView('quiz')}
+                onStartFavoritesQuiz={() => startFavoritesQuiz()}
+                speakJapanese={speakJapanese}
+                isFavorited={isFavorited}
+                toggleFavorite={toggleFavorite}
+                playSfx={playSfx}
+                showToast={showToast}
+              />
             </motion.div>
           ) : view === 'kana_reading' ? (
             <motion.div
@@ -5305,11 +3749,12 @@ export default function App() {
             >
               <KanaReading
                 darkMode={darkMode}
-                onBack={() => switchView('mode_select')}
+                onBack={() => switchView('intro')}
                 onSwitchToWriting={() => switchView('kana_writing')}
                 speakJapanese={speakJapanese}
                 playSfx={playSfx}
                 showToast={showToast}
+                initialScriptType={initialKanaScript}
               />
             </motion.div>
           ) : view === 'kana_writing' ? (
@@ -5324,10 +3769,11 @@ export default function App() {
             >
               <KanaWriting
                 darkMode={darkMode}
-                onBack={() => switchView('mode_select')}
+                onBack={() => switchView('intro')}
                 onSwitchToReading={() => switchView('kana_reading')}
                 speakJapanese={speakJapanese}
                 playSfx={playSfx}
+                initialScriptType={initialKanaScript}
               />
             </motion.div>
           ) : view === 'kanji_hub' ? (
@@ -5342,7 +3788,7 @@ export default function App() {
             >
               <KanjiHub
                 darkMode={darkMode}
-                onBack={() => switchView('mode_select')}
+                onBack={() => switchView('intro')}
                 speakJapanese={speakJapanese}
                 playSfx={playSfx}
                 showToast={showToast}
@@ -5369,7 +3815,7 @@ export default function App() {
                   onClick={() => {
                     playSfx('click');
                     setTimeAttackActive(false);
-                    switchView('mode_select');
+                    switchView('intro');
                   }}
                   className={`p-2.5 rounded-full border transition-all ${
                     darkMode ? 'bg-slate-800 border-slate-700 text-slate-300 hover:text-white' : 'bg-slate-100 border-slate-200 text-slate-700 hover:bg-slate-205 shadow-sm'
@@ -5489,7 +3935,7 @@ export default function App() {
 
                       return (
                         <RippleButton
-                          key={`${opt}-${idx}`}
+                          key={`ta-opt-${timeAttackIndex}-${idx}-${opt}`}
                           onClick={() => handleTimeAttackAnswer(opt)}
                           disabled={timeAttackLocked}
                           whileTap={{ scale: 0.955 }}
@@ -5601,7 +4047,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         playSfx('click');
-                        switchView('mode_select');
+                        switchView('intro');
                       }}
                       className={`w-full font-black text-xs uppercase tracking-wider py-4 px-6 rounded-2xl border transition-all active:scale-[0.98] ${
                         darkMode 
@@ -5635,7 +4081,7 @@ export default function App() {
                   onClick={() => {
                     playSfx('click');
                     setListeningActive(false);
-                    switchView('mode_select');
+                    switchView('intro');
                     if ('speechSynthesis' in window) {
                       window.speechSynthesis.cancel();
                     }
@@ -5664,7 +4110,7 @@ export default function App() {
                   <div className="flex items-center gap-0.5">
                     {Array.from({ length: 5 }).map((_, i) => (
                       <Heart 
-                        key={i} 
+                        key={`listen-heart-${i}`} 
                         className={`w-3.5 h-3.5 ${
                           i < listeningLives 
                           ? 'text-rose-500 fill-rose-500' 
@@ -5795,7 +4241,7 @@ export default function App() {
 
                       return (
                         <RippleButton
-                          key={`${opt}-${idx}`}
+                          key={`listen-opt-${listeningIndex}-${idx}-${opt}`}
                           onClick={() => handleListeningAnswer(opt)}
                           disabled={listeningLocked}
                           whileTap={{ scale: 0.955 }}
@@ -5901,7 +4347,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         playSfx('click');
-                        switchView('mode_select');
+                        switchView('intro');
                       }}
                       className={`w-full font-black text-xs uppercase tracking-wider py-4 px-6 rounded-2xl border transition-all active:scale-[0.98] ${
                         darkMode 
@@ -5935,7 +4381,7 @@ export default function App() {
                   onClick={() => {
                     playSfx('click');
                     setMatchActive(false);
-                    switchView('mode_select');
+                    switchView('intro');
                     if ('speechSynthesis' in window) {
                       window.speechSynthesis.cancel();
                     }
@@ -5989,7 +4435,7 @@ export default function App() {
 
                       return (
                         <motion.button
-                          key={card.id}
+                          key={`match-card-${card.id}-${idx}`}
                           layout
                           onClick={() => handleMatchCardClick(card)}
                           disabled={isMatched || (hasPairSelected && !isSelected)}
@@ -6111,7 +4557,7 @@ export default function App() {
                     <button
                       onClick={() => {
                         playSfx('click');
-                        switchView('mode_select');
+                        switchView('intro');
                       }}
                       className={`w-full font-black text-xs uppercase tracking-wider py-4 px-6 rounded-2xl border transition-all active:scale-[0.98] ${
                         darkMode 
@@ -6125,719 +4571,56 @@ export default function App() {
                 </div>
               )}
             </motion.div>
+          ) : !quizFinished ? (
+            <JapaneseLandmarkQuizView
+              key={`quiz-active-view-${currentLevel}-${isFavoritesMode}`}
+              currentLevel={currentLevel}
+              isFavoritesMode={isFavoritesMode}
+              changeLevel={changeLevel}
+              startFavoritesQuiz={startFavoritesQuiz}
+              score={score}
+              lives={lives}
+              activeQuestion={activeQuestion}
+              currentIndex={currentIndex}
+              currentVocabList={currentVocabList}
+              options={options}
+              selectedInd={selectedInd}
+              answerLock={answerLock}
+              handleAnswer={handleAnswer}
+              nextQuestion={nextQuestion}
+              speakJapanese={speakJapanese}
+              isFavorited={isFavorited}
+              toggleFavorite={toggleFavorite}
+              soundEnabled={soundEnabled}
+              setSoundEnabled={setSoundEnabled}
+              switchView={switchView}
+              feedback={feedback}
+              levelsData={levelsData}
+              getLevelProgress={getLevelProgress}
+              playSfx={playSfx}
+              renderQuestionBody={renderQuestionBody}
+              isRemoteMode={isRemoteMode}
+              remoteDuel={remoteDuel}
+              isMyTurn={isMyTurn}
+              duelTimeLeft={duelTimeLeft}
+            />
           ) : (
             <motion.div 
-              key="quiz"
+              key="quiz-finished"
               custom={{ direction: slideDirection, effect: transitionEffect }}
               variants={viewVariants}
               initial="initial"
               animate="animate"
               exit="exit"
-            className={`max-w-sm w-full border backdrop-blur-xl rounded-[40px] shadow-2xl relative z-10 overflow-hidden flex flex-col min-h-[75vh] transition-colors duration-200 ${
-              darkMode 
-              ? 'bg-slate-900/90 border-slate-700/50 shadow-slate-950/50' 
-              : 'bg-white/80 border-white/40 shadow-slate-200'
-            }`}
-            translate="no"
-          >
-          {/* Header Section */}
-          <div className={`pt-4 pb-1 px-6 flex flex-col items-center gap-2 relative transition-colors ${
-            darkMode ? 'bg-slate-900/40' : 'bg-amber-50/60'
-          }`}>
-            {/* Back Button */}
-            <button 
-              onClick={() => {
-                playSfx('click');
-                if (multiplayerMode) {
-                  switchView('duel_setup');
-                } else {
-                  switchView('mode_select');
-                }
-                setMultiplayerMode(null);
-              }}
-              className={`absolute top-8 left-6 w-8 h-8 flex items-center justify-center rounded-full transition-colors shadow-sm border ${
+              className={`max-w-sm w-full border backdrop-blur-xl rounded-[40px] shadow-2xl relative z-10 overflow-hidden flex flex-col min-h-[75vh] transition-colors duration-200 ${
                 darkMode 
-                ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700 hover:text-white' 
-                : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-100 shadow-slate-200'
+                ? 'bg-slate-900/90 border-slate-700/50 shadow-slate-950/50' 
+                : 'bg-white/80 border-white/40 shadow-slate-200'
               }`}
-              title="Kembali ke Menu Sebelum"
-              aria-label="Kembali ke menu pemilihan mode"
+              translate="no"
             >
-              <ArrowLeft className="w-4 h-4" />
-            </button>
-
-            {/* Duel Header Overlay */}
-            {multiplayerMode && (
-              <div className="flex gap-4 mb-2">
-                <div className={`px-4 py-2 rounded-2xl border-2 transition-all relative ${multiplayerMode === 'p1' ? 'bg-blue-500 text-white border-blue-400 scale-105 shadow-md' : (darkMode ? 'bg-slate-800 text-slate-500 border-slate-700 opacity-60' : 'bg-white text-slate-400 border-slate-100 opacity-60')}`}>
-                  <p className="text-[8px] font-black uppercase">Player 1</p>
-                  <p className="font-bold">{p1Stats.score}</p>
-                  
-                  {/* Floating points/particles */}
-                  <AnimatePresence>
-                    {scorePopups.filter(p => p.type === 'p1').map(p => (
-                      <div key={p.id} className="absolute left-1/2 bottom-full mb-1 z-30 pointer-events-none">
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.5, y: 10, x: '-50%' }}
-                          animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1.2, 1.2, 0.8], y: -50, x: '-50%' }}
-                          transition={{ duration: 1.2, ease: "easeOut" }}
-                          className="text-emerald-405 text-emerald-400 font-extrabold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] whitespace-nowrap"
-                        >
-                          {p.text}
-                        </motion.div>
-                        {[...Array(5)].map((_, idx) => {
-                          const angle = (idx * 360 / 5) * (Math.PI / 180);
-                          const distance = 25 + Math.random() * 20;
-                          const targetX = Math.cos(angle) * distance;
-                          const targetY = -40 + Math.sin(angle) * distance;
-                          return (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 1, scale: 1.2, x: 0, y: 0 }}
-                              animate={{ opacity: [1, 0.8, 0], scale: [1.2, 0.5, 0], x: targetX, y: targetY }}
-                              transition={{ duration: 0.9, ease: "easeOut" }}
-                              className="absolute w-1.5 h-1.5 rounded-full bg-emerald-450 bg-emerald-400"
-                            />
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-                <div className="flex items-center text-slate-300 font-black italic">VS</div>
-                <div className={`px-4 py-2 rounded-2xl border-2 transition-all relative ${multiplayerMode === 'p2' ? 'bg-rose-500 text-white border-rose-400 scale-105 shadow-md' : (darkMode ? 'bg-slate-800 text-slate-500 border-slate-700 opacity-60' : 'bg-white text-slate-400 border-slate-100 opacity-60')}`}>
-                  <p className="text-[8px] font-black uppercase">Player 2</p>
-                  <p className="font-bold">{p2Stats.score}</p>
-                  
-                  {/* Floating points/particles */}
-                  <AnimatePresence>
-                    {scorePopups.filter(p => p.type === 'p2').map(p => (
-                      <div key={p.id} className="absolute left-1/2 bottom-full mb-1 z-30 pointer-events-none">
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.5, y: 10, x: '-50%' }}
-                          animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1.2, 1.2, 0.8], y: -50, x: '-50%' }}
-                          transition={{ duration: 1.2, ease: "easeOut" }}
-                          className="text-rose-400 font-extrabold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] whitespace-nowrap"
-                        >
-                          {p.text}
-                        </motion.div>
-                        {[...Array(5)].map((_, idx) => {
-                          const angle = (idx * 360 / 5) * (Math.PI / 180);
-                          const distance = 25 + Math.random() * 20;
-                          const targetX = Math.cos(angle) * distance;
-                          const targetY = -40 + Math.sin(angle) * distance;
-                          return (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 1, scale: 1.2, x: 0, y: 0 }}
-                              animate={{ opacity: [1, 0.8, 0], scale: [1.2, 0.5, 0], x: targetX, y: targetY }}
-                              transition={{ duration: 0.9, ease: "easeOut" }}
-                              className="absolute w-1.5 h-1.5 rounded-full bg-rose-400"
-                            />
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-              </div>
-            )}
-
-            {/* Remote Duel Header Overlay */}
-            {isRemoteMode && remoteDuel && (
-              <div className="flex flex-col items-center gap-3 w-full mb-2">
-                <div className="flex gap-4 w-full justify-center">
-                  <div className={`flex-1 max-w-[120px] px-3 py-2 rounded-2xl border-2 transition-all shadow-md relative ${
-                    darkMode ? 'bg-blue-600 border-blue-500' : 'bg-blue-500 border-blue-400'
-                  } text-white`}>
-                    <p className="text-[7px] font-black uppercase flex items-center gap-1">
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" /> Anda
-                    </p>
-                    <p className="font-bold text-sm">
-                      {user?.uid === remoteDuel.creator?.uid ? (remoteDuel.scores?.creator ?? 0) : (remoteDuel.scores?.opponent ?? 0)} pts
-                    </p>
-                    <div className="flex gap-0.5 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < (user?.uid === remoteDuel.creator?.uid ? (remoteDuel.lives?.creator ?? 5) : (remoteDuel.lives?.opponent ?? 5)) ? 'bg-white' : 'bg-white/20'}`} />
-                      ))}
-                    </div>
-
-                    {/* Floating points/particles */}
-                    <AnimatePresence>
-                      {scorePopups.filter(p => p.type === 'remote-self').map(p => (
-                        <div key={p.id} className="absolute left-1/2 bottom-full mb-1 z-30 pointer-events-none">
-                          <motion.div
-                            initial={{ opacity: 0, scale: 0.5, y: 10, x: '-50%' }}
-                            animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1.2, 1.2, 0.8], y: -50, x: '-50%' }}
-                            transition={{ duration: 1.2, ease: "easeOut" }}
-                            className="text-emerald-400 font-extrabold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] whitespace-nowrap"
-                          >
-                            {p.text}
-                          </motion.div>
-                          {[...Array(5)].map((_, idx) => {
-                            const angle = (idx * 360 / 5) * (Math.PI / 180);
-                            const distance = 25 + Math.random() * 20;
-                            const targetX = Math.cos(angle) * distance;
-                            const targetY = -40 + Math.sin(angle) * distance;
-                            return (
-                              <motion.div
-                                key={idx}
-                                initial={{ opacity: 1, scale: 1.2, x: 0, y: 0 }}
-                                animate={{ opacity: [1, 0.8, 0], scale: [1.2, 0.5, 0], x: targetX, y: targetY }}
-                                transition={{ duration: 0.9, ease: "easeOut" }}
-                                className="absolute w-1.5 h-1.5 rounded-full bg-emerald-400"
-                              />
-                            );
-                          })}
-                        </div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                  
-                  <div className={`flex items-center font-black italic text-[10px] ${darkMode ? 'text-slate-700' : 'text-slate-300'}`}>VS</div>
-                  
-                  <div className={`flex-1 max-w-[120px] px-3 py-2 rounded-2xl border-2 transition-all ${remoteDuel.opponent ? 'bg-rose-500 text-white border-rose-400 shadow-md' : (darkMode ? 'bg-slate-800 text-slate-600 border-slate-700' : 'bg-slate-50 text-slate-300 border-slate-100')}`}>
-                    <p className="text-[7px] font-black uppercase flex items-center gap-1">
-                      <div className={`w-1.5 h-1.5 rounded-full ${remoteDuel.opponent ? 'bg-emerald-400' : (darkMode ? 'bg-slate-700' : 'bg-slate-300')}`} />
-                      {remoteDuel.opponent ? (user?.uid === remoteDuel.creator?.uid ? remoteDuel.opponent.name : (remoteDuel.creator?.name || 'Creator')) : "Menunggu..."}
-                    </p>
-                    <p className="font-bold text-sm">
-                      {user?.uid === remoteDuel.creator?.uid ? (remoteDuel.scores?.opponent ?? 0) : (remoteDuel.scores?.creator ?? 0)} pts
-                    </p>
-                    <div className="flex gap-0.5 mt-1">
-                      {[...Array(5)].map((_, i) => (
-                        <div key={i} className={`w-1.5 h-1.5 rounded-full ${i < (user?.uid === remoteDuel.creator?.uid ? (remoteDuel.lives?.opponent ?? 5) : (remoteDuel.lives?.creator ?? 5)) ? 'bg-white' : 'bg-white/20'}`} />
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                {remoteDuel.status === 'pending' && (
-                  <motion.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                    className={`p-2 rounded-xl border w-full transition-colors ${
-                      darkMode ? 'bg-blue-500/10 border-blue-500/20' : 'bg-blue-50 border-blue-100'
-                    }`}
-                  >
-                    <p className={`text-[8px] font-bold ${darkMode ? 'text-blue-400' : 'text-blue-700'}`}>MENUNGGU TEMAN... BAGIKAN ID: <span className="text-[10px] font-black">{remoteDuel.id}</span></p>
-                  </motion.div>
-                )}
-              </div>
-            )}
-
-            {/* Stats Bar */}
-            {!multiplayerMode && (
-              <div className="flex items-center gap-3">
-                {/* Score Pill */}
-                <div className={`flex items-center gap-2 px-5 py-2.5 rounded-full shadow-lg border transition-colors relative ${
-                  darkMode ? 'bg-slate-800 text-slate-200 border-slate-700' : 'bg-slate-900 text-white border-slate-700'
-                }`}>
-                  <Trophy className="w-4 h-4 text-amber-400" />
-                  <span className="text-xs font-black tracking-widest uppercase">
-                    {score} / {currentVocabList.length}
-                  </span>
-
-                  {/* Floating points/particles */}
-                  <AnimatePresence>
-                    {scorePopups.filter(p => p.type === 'single').map(p => (
-                      <div key={p.id} className="absolute left-1/2 bottom-full mb-1 z-30 pointer-events-none">
-                        <motion.div
-                          initial={{ opacity: 0, scale: 0.5, y: 10, x: '-50%' }}
-                          animate={{ opacity: [0, 1, 1, 0], scale: [0.8, 1.2, 1.2, 0.8], y: -50, x: '-50%' }}
-                          transition={{ duration: 1.2, ease: "easeOut" }}
-                          className="text-amber-400 font-extrabold text-xs drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] whitespace-nowrap"
-                        >
-                          {p.text}
-                        </motion.div>
-                        {[...Array(5)].map((_, idx) => {
-                          const angle = (idx * 360 / 5) * (Math.PI / 180);
-                          const distance = 25 + Math.random() * 20;
-                          const targetX = Math.cos(angle) * distance;
-                          const targetY = -40 + Math.sin(angle) * distance;
-                          return (
-                            <motion.div
-                              key={idx}
-                              initial={{ opacity: 1, scale: 1.2, x: 0, y: 0 }}
-                              animate={{ opacity: [1, 0.8, 0], scale: [1.2, 0.5, 0], x: targetX, y: targetY }}
-                              transition={{ duration: 0.9, ease: "easeOut" }}
-                              className="absolute w-1.5 h-1.5 rounded-full bg-amber-400"
-                            />
-                          );
-                        })}
-                      </div>
-                    ))}
-                  </AnimatePresence>
-                </div>
-
-                {/* Lives Pill */}
-                <div className={`flex items-center gap-1.5 px-4 py-2.5 rounded-full shadow-lg border transition-all ${
-                  lives <= 1 
-                    ? 'bg-rose-600 text-white border-rose-400 animate-pulse' 
-                    : darkMode 
-                      ? 'bg-slate-800 text-rose-400 border-slate-700'
-                      : 'bg-white text-rose-500 border-rose-100'
-                }`}>
-                  <Heart className={`w-3.5 h-3.5 ${lives > 0 ? 'fill-current' : ''}`} />
-                  <span className="text-xs font-black">{lives}</span>
-                </div>
-              </div>
-            )}
-
-            {multiplayerMode && (
-              <div className={`flex items-center gap-1.5 px-4 py-2 rounded-full border transition-colors ${
-                darkMode ? 'bg-slate-800/40 text-rose-400 border-rose-500/20' : 'bg-white/50 text-rose-500 border-white/60'
-              }`}>
-                <Heart className={`w-3 h-3 ${ (multiplayerMode === 'p1' ? p1Stats.lives : p2Stats.lives) > 0 ? 'fill-current' : ''}`} />
-                <span className="text-[10px] font-black">{multiplayerMode === 'p1' ? p1Stats.lives : p2Stats.lives} Sisa Nyawa</span>
-              </div>
-            )}
-
-          {/* Level Selection Section */}
-          <motion.div 
-            key={`bottom-levels-${activeMode}`}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
-            className="flex flex-wrap gap-1.5 w-full px-2 justify-center"
-          >
-            {Object.keys(levelsData)
-              .map(Number)
-              .map((levelNum, index) => {
-                const mastery = getLevelProgress(levelNum);
-                const isActive = !isFavoritesMode && currentLevel === levelNum;
-                return (
-                  <motion.button
-                    key={levelNum}
-                    initial={{ opacity: 0, scale: 0.75, y: 12 }}
-                    animate={isActive ? {
-                      opacity: 1,
-                      y: 0,
-                      scale: [1, 1.05, 1],
-                      boxShadow: darkMode
-                        ? ["0px 0px 0px rgba(249,115,22,0)", "0px 0px 8px rgba(249,115,22,0.4)", "0px 0px 0px rgba(249,115,22,0)"]
-                        : ["0px 0px 0px rgba(249,115,22,0)", "0px 0px 8px rgba(249,115,22,0.3)", "0px 0px 0px rgba(249,115,22,0)"]
-                    } : {
-                      opacity: 1,
-                      y: 0,
-                      scale: 1,
-                      boxShadow: "0px 1px 2px rgba(0,0,0,0.05)"
-                    }}
-                    transition={isActive ? {
-                      opacity: { type: "spring", stiffness: 220, damping: 16, delay: Math.min(index * 0.02, 0.3) },
-                      y: { type: "spring", stiffness: 220, damping: 16, delay: Math.min(index * 0.02, 0.3) },
-                      scale: { repeat: Infinity, duration: 2, ease: "easeInOut" },
-                      boxShadow: { repeat: Infinity, duration: 2, ease: "easeInOut" }
-                    } : {
-                      opacity: { type: "spring", stiffness: 220, damping: 16, delay: Math.min(index * 0.02, 0.3) },
-                      y: { type: "spring", stiffness: 220, damping: 16, delay: Math.min(index * 0.02, 0.3) },
-                      scale: { duration: 0.15 },
-                      boxShadow: { duration: 0.15 }
-                    }}
-                    whileHover={{ scale: 1.08, y: -2, zIndex: 10 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={() => changeLevel(levelNum)}
-                    className={`px-2.5 py-1.5 rounded-lg text-[9px] font-bold whitespace-nowrap transition-all flex items-center gap-1 shadow-sm border relative overflow-hidden ${
-                      isActive 
-                        ? 'bg-orange-600 text-white border-orange-400 font-black scale-105' 
-                        : darkMode
-                          ? 'bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-slate-200'
-                          : 'bg-white text-slate-600 border-slate-200 hover:bg-orange-50'
-                    }`}
-                  >
-                    {isActive && (
-                      <motion.span
-                        initial={{ opacity: 0, scale: 0 }}
-                        animate={{ opacity: [0, 0.8, 0], scale: [0.6, 1, 0.6], y: [4, -12] }}
-                        transition={{ repeat: Infinity, duration: 1.4 }}
-                        className="absolute pointer-events-none text-[6px] select-none text-yellow-300 left-3"
-                      >
-                        ✨
-                      </motion.span>
-                    )}
-                    <div className="flex items-center gap-1.5 z-10">
-                      <motion.span 
-                        animate={isActive ? {
-                          scale: [1, 1.25, 1],
-                          rotate: [0, 10, -10, 0],
-                          y: [0, -2, 0]
-                        } : { scale: 1, rotate: 0, y: 0 }}
-                        transition={isActive ? {
-                          repeat: Infinity,
-                          duration: 1.5,
-                          ease: "easeInOut"
-                        } : {}}
-                        className="text-[11px] inline-block"
-                      >
-                        {levelsData[levelNum].icon}
-                      </motion.span>
-                      <span>Lv.{levelNum}</span>
-                    </div>
-                    {mastery > 0 && <span className="text-[7px] z-10 opacity-70">({Math.round(mastery)}%)</span>}
-                    <div className={`absolute bottom-0 left-0 w-full h-[3px] transition-colors ${darkMode ? 'bg-slate-900' : 'bg-black/5'}`}>
-                      <div 
-                        className={`h-full ${isActive ? 'bg-white/40' : 'bg-orange-400'}`} 
-                        style={{ width: `${mastery}%` }} 
-                        />
-                    </div>
-                  </motion.button>
-                );
-              })}
-            
-            {/* Favorites Mode Button */}
-            <button
-              onClick={startFavoritesQuiz}
-              aria-label={isFavoritesMode ? "Keluar dari mode kuis kata favorit" : "Buka mode kuis kata favorit"}
-              aria-pressed={isFavoritesMode}
-              className={`px-2.5 py-1.5 rounded-lg text-[9px] font-bold whitespace-nowrap transition-all flex items-center gap-1 shadow-sm border ${
-                isFavoritesMode 
-                ? 'bg-amber-600 text-white border-amber-400 font-black scale-105 shadow-amber-500/30' 
-                : darkMode
-                  ? 'bg-slate-800 text-amber-400 border-slate-700 hover:bg-slate-700'
-                  : 'bg-white text-amber-700 border-slate-300 hover:bg-amber-50 font-extrabold'
-              }`}
-            >
-              <Star className={`w-3 h-3 ${isFavoritesMode ? 'fill-white' : (darkMode ? 'fill-amber-400' : 'fill-amber-500')}`} />
-              Favorit
-            </button>
-
-            {/* Sound Toggle (Moved Here) */}
-            <button 
-              onClick={() => {
-                const nextState = !soundEnabled;
-                setSoundEnabled(nextState);
-                if (nextState) {
-                  sounds.click.play();
-                  announce("Suara kuis diaktifkan");
-                } else {
-                  announce("Suara kuis dinonaktifkan");
-                }
-              }}
-              aria-label={soundEnabled ? "Nonaktifkan suara efek kuis" : "Aktifkan suara efek kuis"}
-              aria-pressed={soundEnabled}
-              className={`px-2.5 py-1.5 rounded-lg transition-all flex items-center justify-center shadow-sm border ${
-                darkMode 
-                  ? 'bg-slate-800 border-slate-700 text-slate-200 hover:bg-slate-700' 
-                  : 'bg-white border-slate-300 text-slate-800 hover:bg-slate-50'
-              }`}
-              title={soundEnabled ? "Matikan Suara" : "Nyalakan Suara"}
-            >
-              {soundEnabled ? <Volume2 className="w-3.5 h-3.5 text-emerald-500" /> : <VolumeX className="w-3.5 h-3.5 text-rose-500" />}
-            </button>
-          </motion.div>
-        </div>
-
-        {/* Quiz Body */}
-        <div id="quiz-container" className="px-6 flex-grow flex flex-col">
-          {(!activeQuestion || options.length === 0) ? (
-            <div className="flex-grow flex items-center justify-center">
-              <Loader message="Menyiapkan Kuis..." />
-            </div>
-          ) : !quizFinished ? (
-            <div className="flex flex-col flex-grow py-2">
-              {/* Progress Indicator */}
-              <div 
-                role="progressbar" 
-                aria-valuenow={Math.round(progress)} 
-                aria-valuemin={0} 
-                aria-valuemax={100} 
-                aria-label={`Kemajuan kuis: ${Math.round(progress)} persen`}
-                className={`w-full h-1.5 rounded-full overflow-hidden mb-4 transition-colors ${darkMode ? 'bg-slate-800' : 'bg-slate-200'}`}
-              >
-                <motion.div 
-                  initial={false}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="h-full bg-orange-500"
-                />
-              </div>
-
-              {/* Animated Question & Answers Container */}
-              <AnimatePresence mode="wait" initial={false}>
-                <motion.div
-                  key={`${currentLevel}-${currentIndex}`}
-                  initial={{ opacity: 0.85, y: 3 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, transition: { duration: 0 } }}
-                  transition={{ 
-                    duration: 0.05,
-                    ease: "easeOut"
-                  }}
-                  className="flex flex-col flex-grow"
-                  style={{ willChange: 'transform, opacity' }}
-                >
-                  {/* Question Box */}
-                  <motion.div 
-                    whileHover={{ y: -1 }}
-                    className={`rounded-[24px] p-4 text-center border-2 transition-all shadow-xl mb-3 relative overflow-hidden group ${
-                      darkMode 
-                      ? 'bg-slate-800/60 border-amber-500/30' 
-                      : 'bg-white/80 border-amber-200'
-                    }`}
-                  >
-                  {/* Decorative background for question box */}
-                  <div className={`absolute -top-10 -right-10 w-20 h-20 rounded-full blur-[30px] opacity-10 ${themeClasses.bg}`} />
-                  
-                  {isRemoteMode && remoteDuel?.status === 'ongoing' && (
-                    <div className="absolute top-0 left-0 right-0 h-1.5 bg-slate-200 dark:bg-slate-700/50 overflow-hidden">
-                      <div 
-                        className={`h-full transition-all duration-1000 ease-linear ${
-                          duelTimeLeft <= 2 
-                            ? 'bg-rose-500 animate-pulse' 
-                            : 'bg-orange-400'
-                        }`}
-                        style={{ width: `${Math.max(0, Math.min(100, (duelTimeLeft / 5) * 100))}%` }}
-                      />
-                    </div>
-                  )}
-
-                  {/* Question Number Badge with Subtle Animated Progress Ring */}
-                  {!(isRemoteMode && remoteDuel) && (
-                    <div 
-                      className="absolute top-2.5 left-3 flex items-center gap-1.5 select-none z-10"
-                      title={`Soal ${currentIndex + 1} dari ${currentVocabList.length}`}
-                      aria-label={`Soal nomor ${currentIndex + 1} dari ${currentVocabList.length}`}
-                    >
-                      <motion.div 
-                        key={`ring-bounce-${currentIndex}`}
-                        initial={{ scale: 0.88 }}
-                        animate={{ scale: 1 }}
-                        transition={{ duration: 0.2, ease: "easeOut" }}
-                        className={`relative flex items-center justify-center w-7 h-7 rounded-full shadow-xs ${
-                          darkMode ? 'bg-slate-900/50' : 'bg-amber-500/5'
-                        }`}
-                      >
-                        <svg className="w-7 h-7 -rotate-90 transform" viewBox="0 0 32 32">
-                          {/* Background Track Ring */}
-                          <circle
-                            cx="16"
-                            cy="16"
-                            r="12"
-                            strokeWidth="2.5"
-                            fill="none"
-                            className={darkMode ? "stroke-slate-700/60" : "stroke-amber-200/80"}
-                          />
-                          {/* Ambient Glow Arc */}
-                          <motion.circle
-                            cx="16"
-                            cy="16"
-                            r="12"
-                            strokeWidth="3.5"
-                            strokeLinecap="round"
-                            fill="none"
-                            className="stroke-amber-400/25 blur-[1px]"
-                            strokeDasharray={75.4}
-                            initial={false}
-                            animate={{ strokeDashoffset: 75.4 - (questionProgressPercent / 100) * 75.4 }}
-                            transition={{ duration: 0.35, ease: "easeOut" }}
-                          />
-                          {/* Dynamic Active Progress Ring */}
-                          <motion.circle
-                            cx="16"
-                            cy="16"
-                            r="12"
-                            strokeWidth="2.5"
-                            strokeLinecap="round"
-                            fill="none"
-                            className="stroke-amber-500"
-                            strokeDasharray={75.4}
-                            initial={false}
-                            animate={{ strokeDashoffset: 75.4 - (questionProgressPercent / 100) * 75.4 }}
-                            transition={{ duration: 0.35, ease: "easeOut" }}
-                          />
-                        </svg>
-                        {/* Question Number in Ring Center */}
-                        <motion.span 
-                          key={`q-idx-${currentIndex}`}
-                          initial={{ scale: 0.7, opacity: 0 }}
-                          animate={{ scale: 1, opacity: 1 }}
-                          transition={{ duration: 0.16, ease: "easeOut" }}
-                          className={`absolute text-[10px] font-black tracking-tight leading-none ${
-                            darkMode ? 'text-amber-400' : 'text-amber-700'
-                          }`}
-                        >
-                          {currentIndex + 1}
-                        </motion.span>
-                      </motion.div>
-                      <span className={`text-[9px] font-bold tracking-tight opacity-75 ${
-                        darkMode ? 'text-slate-400' : 'text-slate-600'
-                      }`}>
-                        /{currentVocabList.length}
-                      </span>
-                    </div>
-                  )}
-
-                  <button
-                    onClick={() => activeQuestion && toggleFavorite(activeQuestion)}
-                    className={`absolute top-2 right-2 p-1.5 rounded-full transition-all hover:scale-110 active:scale-90 ${
-                      darkMode ? 'bg-slate-700/50 hover:bg-slate-700' : 'bg-amber-100/30 hover:bg-amber-100'
-                    }`}
-                  >
-                    <Star className={`w-3.5 h-3.5 transition-all ${isFavorited(activeQuestion) ? 'fill-amber-400 text-amber-500' : (darkMode ? 'text-slate-600' : 'text-slate-200')}`} />
-                  </button>
-                  
-                  {isRemoteMode && remoteDuel && (
-                    <div className="mb-2.5 flex items-center justify-between text-[9px] font-black uppercase tracking-wider px-1 border-b border-dashed border-slate-500/20 pb-2 pt-1.5">
-                      <div className="flex items-center gap-1.5">
-                        {/* Remote Duel Question Progress Ring */}
-                        <div className="relative flex items-center justify-center w-6 h-6">
-                          <svg className="w-6 h-6 -rotate-90 transform" viewBox="0 0 32 32">
-                            <circle
-                              cx="16"
-                              cy="16"
-                              r="12"
-                              strokeWidth="2.5"
-                              fill="none"
-                              className={darkMode ? "stroke-slate-700/60" : "stroke-amber-200/80"}
-                            />
-                            <motion.circle
-                              cx="16"
-                              cy="16"
-                              r="12"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              fill="none"
-                              className="stroke-amber-500"
-                              strokeDasharray={75.4}
-                              initial={false}
-                              animate={{ strokeDashoffset: 75.4 - (questionProgressPercent / 100) * 75.4 }}
-                              transition={{ duration: 0.35, ease: "easeOut" }}
-                            />
-                          </svg>
-                          <span className="absolute text-[8px] font-black text-amber-500">
-                            {currentIndex + 1}
-                          </span>
-                        </div>
-                        <span className={isMyTurn ? 'text-emerald-500 animate-pulse font-black' : 'text-slate-500'}>
-                          {isMyTurn ? '🟢 GILIRAN ANDA' : '⏳ GILIRAN LAWAN'}
-                        </span>
-                      </div>
-                      <span className={duelTimeLeft <= 2 ? 'text-rose-500 font-black animate-pulse' : 'text-slate-500'}>
-                        Waktu: {Math.max(0, duelTimeLeft)}s
-                      </span>
-                    </div>
-                  )}
-
-                  {renderQuestionBody()}
-                </motion.div>
-
-                {/* Answers Vertical List */}
-                <div 
-                  className="flex flex-col gap-1.5 mb-2" 
-                  key={`options-${currentIndex}`}
-                  role="group" 
-                  aria-label="Pilihan jawaban kuis"
-                >
-                  {options.map((opt, idx) => {
-                    const isSelected = selectedInd === opt.ind;
-                    const isTargetCorrect = answerLock && opt.ind === activeQuestion?.ind;
-                    const isTargetWrong = answerLock && isSelected && opt.ind !== activeQuestion?.ind;
-
-                    return (
-                      <RippleButton
-                        key={`${opt.ind}-${idx}`}
-                        initial={{ opacity: 0, y: 6 }}
-                        animate={
-                          isSelected 
-                            ? { opacity: 1, y: 0, scale: [0.96, 1.025, 1] } 
-                            : { opacity: 1, y: 0, scale: 1 }
-                        }
-                        transition={{ duration: 0.22, delay: isSelected ? 0 : idx * 0.02, ease: "easeOut" }}
-                        whileHover={!(isRemoteMode && !isMyTurn) ? { x: 3, scale: 1.01 } : {}}
-                        whileTap={!(isRemoteMode && !isMyTurn) ? { scale: 0.955 } : {}}
-                        rippleColor={
-                          isTargetCorrect
-                            ? 'rgba(255, 255, 255, 0.5)'
-                            : isTargetWrong
-                              ? 'rgba(255, 255, 255, 0.45)'
-                              : darkMode
-                                ? 'rgba(244, 63, 94, 0.3)'
-                                : 'rgba(244, 63, 94, 0.2)'
-                        }
-                        style={{ willChange: 'transform, opacity' }}
-                        onClick={() => handleAnswer(opt.ind)}
-                        disabled={answerLock || (isRemoteMode && (!isMyTurn || remoteDuel?.status !== 'ongoing'))}
-                        aria-label={`Pilihan jawaban ${idx + 1}: ${opt.ind}`}
-                        aria-pressed={isSelected}
-                        className={`w-full py-2.5 px-5 rounded-[20px] text-sm font-bold transition-all shadow-md border-2 group ${
-                          (isRemoteMode && !isMyTurn) ? 'cursor-not-allowed opacity-60' : ''
-                        } ${
-                          answerLock
-                            ? opt.ind === activeQuestion?.ind
-                              ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-500/30'
-                              : opt.ind === selectedInd
-                                ? 'bg-rose-600 border-rose-500 text-white shadow-rose-500/30'
-                                : darkMode 
-                                  ? 'bg-slate-900 border-slate-800 text-slate-500 opacity-50' 
-                                  : 'bg-slate-100 border-slate-200 text-slate-400 opacity-50'
-                            : darkMode
-                              ? 'bg-slate-800 border-slate-700 hover:border-rose-500/50 hover:bg-slate-700 text-slate-100'
-                              : 'bg-white border-slate-200 hover:border-rose-400 hover:bg-rose-50/20 text-slate-900 shadow-slate-200/60'
-                        }`}
-                      >
-                        <span translate="no">{opt.ind}</span>
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
-                          answerLock && opt.ind === activeQuestion?.ind 
-                          ? 'bg-white border-white text-emerald-600' 
-                          : answerLock && opt.ind === selectedInd
-                            ? 'bg-white border-white text-rose-600'
-                            : 'border-transparent group-hover:border-current opacity-20'
-                        }`}>
-                          {answerLock && opt.ind === activeQuestion?.ind ? (
-                            <div className="w-1.5 h-1.5 rounded-full bg-current" />
-                          ) : answerLock && opt.ind === selectedInd ? (
-                            <div className="w-1.5 h-1.5 bg-current rotate-45" style={{ width: '8px', height: '2px', borderRadius: '1px' }} />
-                          ) : (
-                            <div className="w-1 h-1 rounded-full bg-current" />
-                          )}
-                        </div>
-                      </RippleButton>
-                    );
-                  })}
-                </div>
-
-                {/* Feedback Slot */}
-                <div className="h-6 text-center flex items-center justify-center mb-1" role="status" aria-live="polite">
-                  <AnimatePresence mode="wait">
-                    {feedback.type && (
-                      <motion.div
-                        key={feedback.message}
-                        initial={{ opacity: 0, y: 10, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.1 } }}
-                        className={`text-[10px] font-black px-4 py-1 rounded-full uppercase tracking-widest ${
-                          feedback.type === 'correct' 
-                            ? (darkMode ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-emerald-100 text-emerald-900 border border-emerald-300') 
-                            : (darkMode ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-rose-100 text-rose-900 border border-rose-300')
-                        }`}
-                      >
-                        {feedback.message}
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </div>
-
-                {/* Vertical Spacer removed to trim space */}
-                
-                {/* Footer Action */}
-                {!isRemoteMode && (
-                  <div className="pb-1">
-                    <button
-                      onClick={nextQuestion}
-                      disabled={!answerLock || lives === 0}
-                      className={`w-full py-3 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
-                        answerLock && lives > 0
-                          ? darkMode ? 'bg-slate-100 text-slate-900 shadow-xl scale-105' : 'bg-slate-900 text-white shadow-xl hover:bg-black active:scale-95'
-                          : darkMode ? 'bg-slate-800 text-slate-700' : 'bg-slate-100/50 text-slate-300 cursor-not-allowed border border-transparent'
-                      }`}
-                    >
-                      <SkipForward className="w-3.5 h-3.5" />
-                      Selanjutnya
-                    </button>
-                  </div>
-                )}
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        ) : (() => {
+              <div className="p-4 sm:p-5 flex-grow flex flex-col justify-between relative">
+                {(() => {
             const finalScoreVal = multiplayerMode 
               ? (multiplayerMode === 'p1' ? p1Stats.score : p2Stats.score)
               : score;
@@ -6870,9 +4653,10 @@ export default function App() {
                     });
                   } : undefined}
                   onRetry={() => changeLevel(currentLevel)}
-                  onBackToMenu={() => switchView('mode_select')}
+                  onBackToMenu={() => switchView('intro')}
                   onShare={shareScore}
                   playSfx={playSfx}
+                  userTotalXp={userXp}
                 />
               );
             }
@@ -6884,44 +4668,8 @@ export default function App() {
                 transition={{ type: "spring", stiffness: 350, damping: 24 }}
                 className="text-center py-6 flex flex-col items-center flex-grow w-full"
               >
-                {/* Visual Emblem with Rotating Aura & Particles */}
+                {/* Visual Emblem */}
                 <div className="relative mb-5">
-                  {/* Celebratory Rotating Aura for Success */}
-                  {isSuccess && !isRemoteMode && (
-                    <>
-                      <motion.div
-                        animate={{ rotate: 360 }}
-                        transition={{ duration: 16, repeat: Infinity, ease: "linear" }}
-                        style={{ willChange: 'transform' }}
-                        className="absolute -inset-6 rounded-full opacity-35 blur-xl bg-[conic-gradient(from_0deg,#f59e0b,#fbbf24,#f43f5e,#a855f7,#3b82f6,#10b981,#f59e0b)]"
-                      />
-                      {/* Ambient Floating Celebration Sparkles */}
-                      <div className="absolute inset-0 z-0 pointer-events-none">
-                        {[...Array(14)].map((_, i) => (
-                          <motion.div
-                            key={i}
-                            initial={{ opacity: 0, scale: 0 }}
-                            animate={{ 
-                              opacity: [0, 1, 0], 
-                              scale: [0, 1.2, 0.4],
-                              x: [(Math.random() - 0.5) * 180, (Math.random() - 0.5) * 360],
-                              y: [(Math.random() - 0.5) * 180, (Math.random() - 0.5) * 360],
-                            }}
-                            transition={{ 
-                              duration: 1.2 + (i % 3) * 0.4, 
-                              repeat: Infinity,
-                              delay: (i % 5) * 0.25
-                            }}
-                            className={`absolute w-2 h-2 rounded-full ${
-                              i % 3 === 0 ? 'bg-amber-400 shadow-xs shadow-amber-300' : i % 3 === 1 ? 'bg-rose-400' : 'bg-emerald-400'
-                            }`}
-                            style={{ left: '50%', top: '50%' }}
-                          />
-                        ))}
-                      </div>
-                    </>
-                  )}
-
                   <motion.div
                     animate={{ rotate: 360 }}
                     transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
@@ -6958,7 +4706,7 @@ export default function App() {
                       const isEarned = isSuccess && starsCount >= starIdx;
                       return (
                         <motion.div
-                          key={starIdx}
+                          key={`quiz-finish-star-${starIdx}`}
                           initial={{ scale: 0, rotate: -40, opacity: 0 }}
                           animate={{ 
                             scale: isEarned ? [0, 1.35, 1] : 1, 
@@ -7034,11 +4782,7 @@ export default function App() {
                       <h2 className={`text-2xl sm:text-3xl font-black tracking-tight ${darkMode ? 'text-white' : 'text-slate-800'}`}>
                         {!isSuccess 
                           ? "GAME OVER!" 
-                          : isPerfect 
-                          ? "完璧！ (KANPEKI!)" 
-                          : accuracyPct >= 80 
-                          ? "よくできました！" 
-                          : "合格！ (GOUKAKU!)"}
+                          : "SELAMAT! 🎉"}
                       </h2>
                       <p className={`text-xs font-bold max-w-[320px] mx-auto ${
                         isPerfect 
@@ -7051,11 +4795,7 @@ export default function App() {
                       }`}>
                         {!isSuccess 
                           ? 'Jangan menyerah! Setiap kesalahan adalah tangga menuju penguasaan.' 
-                          : isPerfect 
-                          ? 'Luar biasa sempurna! Semua kosakata level ini dikuasai tanpa cela!' 
-                          : accuracyPct >= 80 
-                          ? 'Hebat sekali! Penguasaan kosakata Anda sangat tajam dan lancar!' 
-                          : 'Kerja bagus! Kuis tuntas, asah terus hingga raih 3 bintang penuh!'}
+                          : 'おめでとうございます！ Anda telah menyelesaikan kuis ini dengan baik.'}
                       </p>
                     </>
                   )}
@@ -7177,23 +4917,6 @@ export default function App() {
                       </button>
                     )}
 
-                    {/* Re-trigger Confetti Button */}
-                    {isSuccess && (
-                      <button
-                        onClick={() => {
-                          playSfx('win');
-                          triggerConfetti(3500);
-                        }}
-                        className={`px-3.5 py-3.5 rounded-[24px] shadow-md transition-all flex items-center justify-center active:scale-95 border-2 text-amber-500 font-bold ${
-                          darkMode ? 'bg-slate-800/80 border-slate-700 hover:bg-slate-700' : 'bg-white border-slate-200 hover:bg-amber-50'
-                        }`}
-                        title="Tembak Confetti Perayaan Lagi"
-                        aria-label="Tembak Confetti"
-                      >
-                        <span className="text-base">🎊</span>
-                      </button>
-                    )}
-
                     <button
                       onClick={shareScore}
                       className={`p-3.5 rounded-[24px] shadow-md transition-all flex items-center justify-center active:scale-95 border-2 ${
@@ -7214,7 +4937,7 @@ export default function App() {
                       if (multiplayerMode) {
                         switchView('duel_setup');
                       } else {
-                        switchView('mode_select');
+                        switchView('intro');
                       }
                       setMultiplayerMode(null);
                     }}
@@ -7863,10 +5586,227 @@ export default function App() {
                 </div>
               )}
 
+              {/* Registered Profile Info Card */}
+              <div className={`p-3 rounded-2xl border text-left flex items-center justify-between text-xs ${
+                darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-slate-50 border-slate-200'
+              }`}>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-500 font-black flex items-center justify-center shrink-0">
+                    {registeredUser ? registeredUser.name.charAt(0).toUpperCase() : '👤'}
+                  </div>
+                  <div className="truncate">
+                    <div className="flex items-center gap-1">
+                      <span className="font-black truncate">{registeredUser ? registeredUser.name : 'Belum Terdaftar'}</span>
+                      {registeredUser && (
+                        <span className="px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[8px] font-black">
+                          VERIFIED
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-[10px] text-slate-500 truncate">
+                      {registeredUser ? `${registeredUser.age} Thn • ${registeredUser.contact}` : 'Daftar nama & usia'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSettingsModal(false);
+                    setShowRegistrationModal(true);
+                  }}
+                  className="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-500 hover:bg-rose-500 hover:text-white font-black text-[10px] transition-colors cursor-pointer shrink-0"
+                >
+                  {registeredUser ? 'Ubah Data' : 'Daftar'}
+                </button>
+              </div>
+
+              {/* Kontak Admin Box */}
+              <div className={`p-3 rounded-2xl border text-left flex flex-col gap-2 ${
+                darkMode ? 'bg-slate-850/70 border-slate-700/80' : 'bg-slate-50 border-slate-200/90'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+                    <MessageCircle className="w-3.5 h-3.5 text-emerald-500" />
+                    Kontak Admin
+                  </span>
+                  <span className="text-[9px] font-bold px-2 py-0.2 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
+                    Respon Cepat
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  {/* WA Button */}
+                  <div className={`p-2 rounded-xl border flex flex-col justify-between gap-1.5 ${
+                    darkMode ? 'bg-slate-900/60 border-slate-700/60' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-5 h-5 rounded-md bg-emerald-500 text-white flex items-center justify-center shrink-0">
+                        <Phone className="w-3 h-3" />
+                      </div>
+                      <span className="text-[10px] font-bold truncate">WhatsApp</span>
+                    </div>
+                    <span className="text-[10.5px] font-extrabold text-emerald-600 dark:text-emerald-400 truncate select-all">
+                      081935928784
+                    </span>
+                    <div className="flex gap-1 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('081935928784');
+                          playSfx('click');
+                          showToast('Nomor WhatsApp disalin! (081935928784)', 'success');
+                        }}
+                        className="flex-1 py-1 rounded-md text-[9px] font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>Salin</span>
+                      </button>
+                      <a
+                        href="https://wa.me/6281935928784?text=Halo%20Admin%20Mina%20no%20Nihongo%2C%20saya%20ingin%20bertanya..."
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => playSfx('click')}
+                        className="flex-1 py-1 rounded-md text-[9px] font-black bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <span>Chat</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Gmail Button */}
+                  <div className={`p-2 rounded-xl border flex flex-col justify-between gap-1.5 ${
+                    darkMode ? 'bg-slate-900/60 border-slate-700/60' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="w-5 h-5 rounded-md bg-rose-500 text-white flex items-center justify-center shrink-0">
+                        <Mail className="w-3 h-3" />
+                      </div>
+                      <span className="text-[10px] font-bold truncate">Gmail</span>
+                    </div>
+                    <span className="text-[10.5px] font-extrabold text-rose-500 dark:text-rose-400 truncate select-all">
+                      duta070905...
+                    </span>
+                    <div className="flex gap-1 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          navigator.clipboard.writeText('duta070905@gmail.com');
+                          playSfx('click');
+                          showToast('Email admin disalin! (duta070905@gmail.com)', 'success');
+                        }}
+                        className="flex-1 py-1 rounded-md text-[9px] font-bold border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center gap-1 cursor-pointer transition-colors"
+                      >
+                        <Copy className="w-2.5 h-2.5" />
+                        <span>Salin</span>
+                      </button>
+                      <a
+                        href="mailto:duta070905@gmail.com?subject=Tanya%20Admin%20Mina%20no%20Nihongo"
+                        onClick={() => playSfx('click')}
+                        className="flex-1 py-1 rounded-md text-[9px] font-black bg-rose-500 hover:bg-rose-600 text-white flex items-center justify-center gap-1 transition-colors"
+                      >
+                        <span>Email</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               {/* Footer text */}
               <div className={`text-center text-[9px] font-bold border-t pt-2.5 dark:border-slate-800 ${darkMode ? 'text-slate-400' : 'text-slate-600'}`}>
                 MinaNoNihongo • Pengaturan Tersimpan Otomatis
               </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Notification Modal (Pemberitahuan & Update) */}
+      <AnimatePresence>
+        {showNotificationModal && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => {
+                playSfx('click');
+                setShowNotificationModal(false);
+              }}
+              className="absolute inset-0 bg-slate-950/60 backdrop-blur-md"
+            />
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              className={`relative z-10 w-full max-w-sm rounded-[32px] p-6 shadow-2xl border ${
+                darkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-white border-slate-200 text-slate-900'
+              }`}
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-500/20">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 rounded-2xl bg-rose-500/15 text-rose-500 flex items-center justify-center font-bold">
+                    <Bell className="w-5 h-5" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-extrabold text-sm">Pemberitahuan & Update</h3>
+                    <p className="text-[10px] text-slate-400 font-semibold">お知らせ (Oshirase)</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    playSfx('click');
+                    setShowNotificationModal(false);
+                  }}
+                  className="w-8 h-8 rounded-full bg-slate-500/10 hover:bg-slate-500/20 flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3 py-4 max-h-[60vh] overflow-y-auto no-scrollbar text-left">
+                <div className={`p-3.5 rounded-2xl border ${darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-rose-50/70 border-rose-100'}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">🌸</span>
+                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400">Tampilan Menu Baru Otentik</span>
+                    <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-rose-500 text-white font-black ml-auto">BARU</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    Menu utama diperbarui dengan pemandangan Gunung Fuji, navigasi kategori Hiragana, Katakana, Kanji, Kosakata, dan fitur pencarian Kamus langsung!
+                  </p>
+                </div>
+
+                <div className={`p-3.5 rounded-2xl border ${darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-blue-50/70 border-blue-100'}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">⚔️</span>
+                    <span className="text-xs font-bold text-blue-600 dark:text-blue-400">Mode Duel 1v1 & Online</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    Tantang temanmu dalam kuis real-time atau adu kemampuan kosakata di lobi duel online.
+                  </p>
+                </div>
+
+                <div className={`p-3.5 rounded-2xl border ${darkMode ? 'bg-slate-800/60 border-slate-700' : 'bg-amber-50/70 border-amber-100'}`}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-base">⭐</span>
+                    <span className="text-xs font-bold text-amber-600 dark:text-amber-400">Kuis Favorit & Riwayat</span>
+                  </div>
+                  <p className="text-[11px] text-slate-600 dark:text-slate-300 leading-relaxed font-medium">
+                    Tandai kata-kata sulit yang kamu temukan untuk dipelajari kembali di menu Kuis Favorit kapan saja.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  playSfx('click');
+                  setShowNotificationModal(false);
+                }}
+                className="w-full py-3 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md transition-all active:scale-98 cursor-pointer"
+              >
+                Mengerti
+              </button>
             </motion.div>
           </div>
         )}
@@ -8021,6 +5961,14 @@ export default function App() {
         )}
       </AnimatePresence>
 
+      {/* Registration & Verification Modal */}
+      <RegistrationModal
+        isOpen={showRegistrationModal}
+        onSuccess={handleRegistrationSuccess}
+        onClose={() => setShowRegistrationModal(false)}
+        darkMode={darkMode}
+      />
+
       {/* Toast Notification HUD */}
       <AnimatePresence>
         {toast && (
@@ -8069,6 +6017,19 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Level Up Celebration Modal */}
+      {levelUpModalData && (
+        <LevelUpModal
+          isOpen={showLevelUpModal}
+          onClose={() => setShowLevelUpModal(false)}
+          oldLevel={levelUpModalData.oldLevel}
+          newLevel={levelUpModalData.newLevel}
+          levelInfo={levelUpModalData.levelInfo}
+          xpEarned={levelUpModalData.xpEarned}
+          darkMode={darkMode}
+        />
+      )}
 
       </div>
 

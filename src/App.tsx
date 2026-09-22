@@ -2988,7 +2988,7 @@ export default function App() {
         id="main-container" 
         tabIndex={-1} 
         style={{ 
-          visibility: isLoadingIntro ? 'hidden' : 'visible',
+          display: (!isLoggedIn || isLoadingIntro) ? 'none' : 'flex',
           willChange: 'transform, opacity'
         }}
         className={`relative w-full ${view === 'intro' || view === 'profile' ? 'max-w-full sm:max-w-[440px]' : 'max-w-[420px]'} flex items-center justify-center outline-none ${view !== 'intro' && view !== 'profile' ? 'pt-18 sm:pt-20' : ''}`}

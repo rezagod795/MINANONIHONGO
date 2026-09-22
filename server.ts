@@ -5,6 +5,41 @@ import fs from 'fs';
 // In-Memory Cache to prevent duplicate GCP TTS API calls for identical words
 const ttsCache = new Map<string, Buffer>();
 
+// File-backed persistent storage for registered user accounts
+const ACCOUNTS_FILE = path.join(process.cwd(), 'registered_accounts.json');
+
+function getRegisteredAccounts(): any[] {
+  try {
+    if (fs.existsSync(ACCOUNTS_FILE)) {
+      const data = fs.readFileSync(ACCOUNTS_FILE, 'utf-8');
+      return JSON.parse(data);
+    }
+  } catch (e) {
+    console.warn("Could not read accounts file:", e);
+  }
+  return [];
+}
+
+function saveRegisteredAccount(newAccount: any) {
+  try {
+    const accounts = getRegisteredAccounts();
+    const cleanContact = (newAccount.contact || '').trim().toLowerCase();
+    const existingIndex = accounts.findIndex(
+      (a: any) => (a.contact || '').trim().toLowerCase() === cleanContact
+    );
+    if (existingIndex >= 0) {
+      accounts[existingIndex] = { ...accounts[existingIndex], ...newAccount };
+    } else {
+      accounts.push(newAccount);
+    }
+    fs.writeFileSync(ACCOUNTS_FILE, JSON.stringify(accounts, null, 2), 'utf-8');
+    return true;
+  } catch (e) {
+    console.warn("Could not save account to file:", e);
+    return false;
+  }
+}
+
 async function startServer() {
   const app = express();
 
@@ -89,6 +124,89 @@ async function startServer() {
     } catch (err: any) {
       console.error("Error in /api/notify-admin:", err);
       return res.status(500).json({ error: "Gagal mengirim notifikasi admin", details: err.message });
+    }
+  });
+
+  // API Route: Registrasi Akun Resmi (Menyimpan data pendaftar & kirim notifikasi)
+  app.post('/api/accounts/register', async (req: Request, res: Response) => {
+    try {
+      const { name, age, contact, contactType, id, registeredAt, verified } = req.body;
+      if (!name || !contact) {
+        return res.status(400).json({ success: false, error: "Nama dan Kontak wajib diisi." });
+      }
+
+      const accountData = {
+        id: id || `usr_${Date.now()}`,
+        name: String(name).trim(),
+        age: parseInt(String(age), 10) || 20,
+        contact: String(contact).trim(),
+        contactType: contactType === 'phone' ? 'phone' : 'email',
+        registeredAt: registeredAt || new Date().toLocaleString('id-ID', { timeZone: 'Asia/Jakarta' }),
+        verified: !!verified
+      };
+
+      saveRegisteredAccount(accountData);
+
+      // Trigger admin notification email
+      const ADMIN_EMAIL = 'duta070905@gmail.com';
+      fetch(`https://formsubmit.co/ajax/${ADMIN_EMAIL}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify({
+          _subject: `🎉 Pendaftar Baru MinaNihongo: ${accountData.name} (${accountData.age} Thn) [${accountData.contactType === 'phone' ? 'No. HP' : 'Email'}]`,
+          nama: accountData.name,
+          usia: `${accountData.age} Tahun`,
+          kontak: accountData.contact,
+          tipe_kontak: accountData.contactType === 'phone' ? 'Nomor HP' : 'Email (Gmail)',
+          status_verifikasi: 'TERVERIFIKASI (OTP Valid)',
+          waktu_pendaftaran: accountData.registeredAt,
+          aplikasi: 'MinaNihongo - Aplikasi Belajar Bahasa Jepang',
+          _captcha: 'false',
+          _template: 'table'
+        })
+      }).catch((e) => console.warn('FormSubmit auto notify error:', e));
+
+      return res.json({ success: true, account: accountData });
+    } catch (err: any) {
+      console.error("Error in /api/accounts/register:", err);
+      return res.status(500).json({ success: false, error: "Gagal menyimpan akun", details: err.message });
+    }
+  });
+
+  // API Route: Verifikasi Akun Terdaftar (Cek apakah kontak sudah pernah didaftarkan)
+  app.get('/api/accounts/check', (req: Request, res: Response) => {
+    try {
+      const contactQuery = String(req.query.contact || '').trim().toLowerCase();
+      if (!contactQuery) {
+        return res.status(400).json({ registered: false, error: "Parameter contact diperlukan" });
+      }
+
+      const accounts = getRegisteredAccounts();
+      const matched = accounts.find((acc: any) => {
+        const accContact = (acc.contact || '').trim().toLowerCase();
+        const accName = (acc.name || '').trim().toLowerCase();
+        return accContact === contactQuery || accName === contactQuery;
+      });
+
+      if (matched) {
+        return res.json({
+          registered: true,
+          account: {
+            id: matched.id,
+            name: matched.name,
+            age: matched.age,
+            contact: matched.contact,
+            contactType: matched.contactType,
+            registeredAt: matched.registeredAt,
+            verified: matched.verified
+          }
+        });
+      }
+
+      return res.json({ registered: false, message: "Akun belum terdaftar. Silakan lakukan pendaftaran terlebih dahulu." });
+    } catch (err: any) {
+      console.error("Error in /api/accounts/check:", err);
+      return res.status(500).json({ registered: false, error: "Gagal mengecek akun" });
     }
   });
 

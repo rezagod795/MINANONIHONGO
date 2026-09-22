@@ -74,16 +74,6 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     return () => clearInterval(timer);
   }, [regStep, countdown]);
 
-  // Floating Sakura Petals
-  const petals = [
-    { id: 1, left: '6%', delay: 0, duration: 7.0, size: 18, rotate: 35 },
-    { id: 2, left: '19%', delay: 1.8, duration: 7.8, size: 16, rotate: -20 },
-    { id: 3, left: '38%', delay: 0.9, duration: 8.5, size: 22, rotate: 55 },
-    { id: 4, left: '64%', delay: 2.5, duration: 7.2, size: 15, rotate: -45 },
-    { id: 5, left: '83%', delay: 1.2, duration: 8.0, size: 20, rotate: 30 },
-    { id: 6, left: '94%', delay: 3.0, duration: 7.5, size: 14, rotate: -35 },
-  ];
-
   // Handler Login Cepat untuk akun yang sudah tersimpan
   const handleQuickLogin = () => {
     if (registeredUser) {
@@ -95,7 +85,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
     }
   };
 
-  // Handler Form Login Manual
+  // Handler Form Login Manual (Hanya akun yang SUDAH TERDAFTAR yang boleh masuk)
   const handleManualLogin = (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
@@ -107,64 +97,84 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       return;
     }
 
-    // Jika cocok dengan registeredUser yang tersimpan
-    if (registeredUser && (registeredUser.contact.toLowerCase() === cleanInput.toLowerCase() || registeredUser.name.toLowerCase() === cleanInput.toLowerCase())) {
-      setInfoMessage(`Selamat datang kembali, ${registeredUser.name}!`);
-      setTimeout(() => {
-        onLoginSuccess(registeredUser);
-      }, 400);
-      return;
+    const cleanLower = cleanInput.toLowerCase();
+
+    // 1. Cek dengan registeredUser yang tersimpan di state/props
+    if (registeredUser) {
+      const matchProp =
+        registeredUser.contact.toLowerCase() === cleanLower ||
+        registeredUser.name.toLowerCase() === cleanLower;
+      if (matchProp) {
+        setInfoMessage(`Selamat datang kembali, ${registeredUser.name}!`);
+        setTimeout(() => {
+          onLoginSuccess(registeredUser);
+        }, 400);
+        return;
+      }
     }
 
-    // Cek daftar akun lokal tersimpan
+    // 2. Cek di localStorage: minanihongo_registered_user
     try {
-      const savedAccountsStr = localStorage.getItem('minanihongo_local_accounts');
-      if (savedAccountsStr) {
-        const accounts = JSON.parse(savedAccountsStr);
-        const matched = accounts.find((acc: any) => 
-          acc.email?.toLowerCase() === cleanInput.toLowerCase() || 
-          acc.name?.toLowerCase() === cleanInput.toLowerCase() ||
-          acc.contact?.toLowerCase() === cleanInput.toLowerCase()
-        );
-        if (matched) {
-          const profile: RegisteredUserProfile = {
-            id: matched.id || `usr_${Date.now()}`,
-            name: matched.name || matched.email?.split('@')[0] || 'User',
-            age: matched.age || 20,
-            contact: matched.contact || matched.email || cleanInput,
-            contactType: cleanInput.includes('@') ? 'email' : 'phone',
-            registeredAt: matched.registeredAt || new Date().toISOString(),
-            verified: true,
-          };
-          localStorage.setItem('minanihongo_registered_user', JSON.stringify(profile));
-          setInfoMessage(`Login berhasil! Selamat datang, ${profile.name}!`);
+      const regUserStr = localStorage.getItem('minanihongo_registered_user');
+      if (regUserStr) {
+        const savedUser = JSON.parse(regUserStr);
+        if (
+          savedUser.contact?.toLowerCase() === cleanLower ||
+          savedUser.name?.toLowerCase() === cleanLower ||
+          (savedUser.email && savedUser.email.toLowerCase() === cleanLower)
+        ) {
+          setInfoMessage(`Selamat datang kembali, ${savedUser.name}!`);
           setTimeout(() => {
-            onLoginSuccess(profile);
+            onLoginSuccess(savedUser);
           }, 400);
           return;
         }
       }
     } catch {}
 
-    // Jika belum ditemukan di cache lokal, buat profil dari kontak yang dimasukkan
-    const isEmail = cleanInput.includes('@');
-    const autoName = isEmail ? cleanInput.split('@')[0] : `User ${cleanInput.slice(-4)}`;
-    const newProfile: RegisteredUserProfile = {
-      id: `usr_${Date.now()}`,
-      name: autoName,
-      age: 20,
-      contact: cleanInput,
-      contactType: isEmail ? 'email' : 'phone',
-      registeredAt: new Date().toISOString(),
-      verified: true,
-    };
+    // 3. Cek daftar akun lokal tersimpan (minanihongo_local_accounts)
     try {
-      localStorage.setItem('minanihongo_registered_user', JSON.stringify(newProfile));
+      const savedAccountsStr = localStorage.getItem('minanihongo_local_accounts');
+      if (savedAccountsStr) {
+        const accounts = JSON.parse(savedAccountsStr);
+        if (Array.isArray(accounts)) {
+          const matched = accounts.find((acc: any) => 
+            acc.contact?.toLowerCase() === cleanLower || 
+            acc.email?.toLowerCase() === cleanLower || 
+            acc.name?.toLowerCase() === cleanLower
+          );
+          if (matched) {
+            const profile: RegisteredUserProfile = {
+              id: matched.id || `usr_${Date.now()}`,
+              name: matched.name || matched.email?.split('@')[0] || 'User',
+              age: matched.age || 20,
+              contact: matched.contact || matched.email || cleanInput,
+              contactType: (matched.contactType as any) || (cleanInput.includes('@') ? 'email' : 'phone'),
+              registeredAt: matched.registeredAt || new Date().toISOString(),
+              verified: true,
+            };
+            localStorage.setItem('minanihongo_registered_user', JSON.stringify(profile));
+            setInfoMessage(`Login berhasil! Selamat datang kembali, ${profile.name}!`);
+            setTimeout(() => {
+              onLoginSuccess(profile);
+            }, 400);
+            return;
+          }
+        }
+      }
     } catch {}
-    setInfoMessage(`Login berhasil sebagai ${autoName}!`);
-    setTimeout(() => {
-      onLoginSuccess(newProfile);
-    }, 400);
+
+    // 4. JIKA BELUM TERDAFTAR: TOLAK LOGIN!
+    // Alur wajib: Daftar akun terlebih dahulu, baru kemudian bisa masuk lewat login!
+    if (cleanInput.includes('@')) {
+      setRegContactType('email');
+      setRegContact(cleanInput);
+    } else if (/^[0-9+\s-]+$/.test(cleanInput)) {
+      setRegContactType('phone');
+      setRegContact(cleanInput.replace(/\s|-/g, ''));
+    }
+
+    setErrorMessage('Akun belum terdaftar! Anda harus melakukan pendaftaran akun terlebih dahulu sebelum bisa masuk.');
   };
 
   // Handler Kirim OTP Registrasi
@@ -314,6 +324,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       localStorage.setItem('minanihongo_registered_name', profile.name);
       sessionStorage.setItem('minanihongo_session_logged_in', 'true');
 
+      // Simpan ke daftar seluruh akun lokal agar bisa login kembali lewat menu Masuk
+      try {
+        const existingAccountsStr = localStorage.getItem('minanihongo_local_accounts') || '[]';
+        let existingAccounts: any[] = [];
+        try {
+          existingAccounts = JSON.parse(existingAccountsStr);
+          if (!Array.isArray(existingAccounts)) existingAccounts = [];
+        } catch {}
+        const existsIndex = existingAccounts.findIndex((acc: any) => 
+          acc.contact?.toLowerCase() === profile.contact.toLowerCase() ||
+          (acc.email && acc.email.toLowerCase() === profile.contact.toLowerCase())
+        );
+        if (existsIndex >= 0) {
+          existingAccounts[existsIndex] = profile;
+        } else {
+          existingAccounts.push(profile);
+        }
+        localStorage.setItem('minanihongo_local_accounts', JSON.stringify(existingAccounts));
+      } catch {}
+
       setRegStep('success');
 
       setTimeout(() => {
@@ -332,57 +362,43 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      transition={{ duration: 0.2, ease: 'easeOut' }}
-      style={{ willChange: 'opacity' }}
+      transition={{ duration: 0.18, ease: 'easeOut' }}
+      style={{ willChange: 'opacity, transform', transform: 'translateZ(0)' }}
       className="fixed inset-0 z-[80] flex flex-col items-center justify-between select-none overflow-y-auto overflow-x-hidden p-4"
     >
       {/* Background Image: Gunung Fuji, Sunset & Sakura */}
       <div
         className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0"
         style={{
-          backgroundImage: `url('/sunset_fuji_reg.jpg'), url('/fuji_loading_bg.jpg'), url('/login_fuji_bg.jpg')`,
+          backgroundImage: `url('/sunset_fuji_reg.jpg')`,
           backgroundColor: '#0c1b35',
         }}
       >
-        <div className="absolute inset-0 bg-gradient-to-b from-sky-950/70 via-black/40 to-sky-950/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#061226]/85 via-black/45 to-[#061226]/90" />
       </div>
 
-      {/* Floating Animated Sakura Petals */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden z-10">
-        {petals.map((petal) => (
-          <motion.div
-            key={petal.id}
-            initial={{ y: -40, x: 0, opacity: 0, rotate: 0 }}
-            animate={{
-              y: ['0vh', '110vh'],
-              x: [0, 20, -15, 25, 0],
-              opacity: [0, 0.9, 0.85, 0],
-              rotate: [0, petal.rotate, petal.rotate * 2, petal.rotate * 3],
-            }}
-            transition={{
-              duration: petal.duration,
-              delay: petal.delay,
-              repeat: Infinity,
-              ease: 'linear',
-            }}
-            style={{
-              left: petal.left,
-              width: petal.size,
-              height: petal.size,
-            }}
-            className="absolute"
-          >
-            <svg viewBox="0 0 30 30" fill="none" className="w-full h-full drop-shadow-sm">
-              <path
-                d="M15 2 C8 7, 3 15, 6 22 C9 28, 15 28, 18 24 C21 28, 27 27, 27 20 C27 13, 20 5, 15 2 Z"
-                fill="#fbcfe8"
-                fillOpacity="0.85"
-                stroke="#f472b6"
-                strokeWidth="0.8"
-              />
-            </svg>
-          </motion.div>
-        ))}
+      {/* Static Subtle Sakura Flourishes (Zero JS animation overhead) */}
+      <div className="fixed top-3 right-4 pointer-events-none opacity-40 z-10" aria-hidden="true">
+        <svg width="26" height="26" viewBox="0 0 30 30" fill="none">
+          <path
+            d="M15 2 C8 7, 3 15, 6 22 C9 28, 15 28, 18 24 C21 28, 27 27, 27 20 C27 13, 20 5, 15 2 Z"
+            fill="#fbcfe8"
+            fillOpacity="0.85"
+            stroke="#f472b6"
+            strokeWidth="0.8"
+          />
+        </svg>
+      </div>
+      <div className="fixed bottom-4 left-4 pointer-events-none opacity-35 z-10" aria-hidden="true">
+        <svg width="22" height="22" viewBox="0 0 30 30" fill="none">
+          <path
+            d="M15 2 C8 7, 3 15, 6 22 C9 28, 15 28, 18 24 C21 28, 27 27, 27 20 C27 13, 20 5, 15 2 Z"
+            fill="#fbcfe8"
+            fillOpacity="0.85"
+            stroke="#f472b6"
+            strokeWidth="0.8"
+          />
+        </svg>
       </div>
 
       {/* Tombol Masuk sebagai Tamu di Pojok Kiri Atas */}
@@ -397,7 +413,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
               onGuestLogin();
             }
           }}
-          className="fixed left-4 top-4 sm:left-6 sm:top-6 px-3.5 py-2 rounded-2xl bg-black/50 hover:bg-black/70 backdrop-blur-md border border-white/20 text-white flex items-center gap-2 shadow-lg transition-all cursor-pointer z-40 active:scale-95 text-xs font-bold"
+          className="fixed left-4 top-4 sm:left-6 sm:top-6 px-3.5 py-2 rounded-2xl bg-[#06142a]/90 hover:bg-[#06142a] border border-cyan-400/30 text-white flex items-center gap-2 shadow-xl transition-all cursor-pointer z-40 active:scale-95 text-xs font-bold"
           title={regStep === 'otp' ? 'Kembali ke Form' : 'Masuk sebagai Tamu'}
         >
           {regStep === 'otp' ? (
@@ -421,18 +437,20 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         {/* HEADER: APP EMBLEM, PILL BADGE & WELCOME TEXT */}
         {/* ======================================================== */}
         <motion.div
-          initial={{ y: -20, opacity: 0 }}
+          initial={{ y: -16, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.55 }}
+          transition={{ duration: 0.3, ease: 'easeOut' }}
           className="flex flex-col items-center text-center w-full mb-3"
         >
           {/* Logo Badge in Rounded Square with Outer Halo */}
           <div className="relative mb-2.5 group">
-            <div className="absolute -inset-1.5 rounded-[28px] sm:rounded-[32px] bg-gradient-to-tr from-pink-500 via-rose-400 to-cyan-500 opacity-75 blur-md animate-pulse" />
+            <div className="absolute -inset-1 rounded-[28px] sm:rounded-[32px] bg-gradient-to-tr from-pink-500 via-rose-400 to-cyan-500 opacity-60 shadow-[0_0_20px_rgba(244,63,94,0.45)]" />
             <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-[22px] sm:rounded-[26px] p-1 bg-gradient-to-b from-white via-pink-50 to-pink-100 shadow-[0_10px_30px_rgba(244,63,94,0.4)] border-2 border-white/90 overflow-hidden flex items-center justify-center">
               <img
                 src="/logo.png"
                 alt="MinaNihongo Logo"
+                loading="eager"
+                decoding="async"
                 referrerPolicy="no-referrer"
                 className="w-full h-full object-cover rounded-[18px] sm:rounded-[22px]"
                 onError={(e) => {
@@ -451,7 +469,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           </p>
 
           {/* DUAL TAB SWITCHER: MASUK (LOGIN) & DAFTAR (REGISTRASI) */}
-          <div className="w-full max-w-[340px] grid grid-cols-2 p-1 rounded-2xl bg-black/40 backdrop-blur-md border border-cyan-400/30 shadow-lg mb-2">
+          <div className="w-full max-w-[340px] grid grid-cols-2 p-1 rounded-2xl bg-[#07172f]/90 border border-cyan-400/40 shadow-xl mb-2">
             <button
               type="button"
               onClick={() => {
@@ -489,14 +507,15 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         </motion.div>
 
         {/* ======================================================== */}
-        {/* CENTER GLASSMORPHISM CARD WITH CYAN ACCENTS */}
+        {/* CENTER CARD WITH CYAN ACCENTS (GPU Accelerated) */}
         {/* ======================================================== */}
         <motion.div
           key={activeTab}
-          initial={{ y: 15, opacity: 0 }}
+          initial={{ y: 10, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.35 }}
-          className="w-full rounded-[30px] p-5 sm:p-6 bg-sky-950/40 backdrop-blur-md border border-cyan-400/50 shadow-[0_8px_32px_rgba(0,0,0,0.5),0_0_25px_rgba(56,189,248,0.2)] relative overflow-hidden"
+          transition={{ duration: 0.22, ease: 'easeOut' }}
+          style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
+          className="w-full rounded-[30px] p-5 sm:p-6 bg-[#071830]/95 border border-cyan-400/45 shadow-[0_12px_40px_rgba(0,0,0,0.6),0_0_20px_rgba(34,211,238,0.15)] relative overflow-hidden"
         >
           {/* Japanese Cyan Corner Flourishes */}
           <div className="absolute top-3 left-3 w-4 h-4 border-t-2 border-l-2 border-cyan-400 rounded-tl-lg pointer-events-none drop-shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
@@ -511,10 +530,26 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                className="p-3 mb-3 bg-rose-500/25 backdrop-blur-xs border border-rose-500/60 text-rose-200 rounded-2xl text-xs font-bold flex items-center gap-2 text-left"
+                className="p-3.5 mb-3 bg-rose-950/90 border border-rose-500/60 text-rose-200 rounded-2xl text-xs font-bold text-left space-y-2"
               >
-                <AlertCircle className="w-4 h-4 shrink-0 text-rose-300" />
-                <span>{errorMessage}</span>
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0 text-rose-300 mt-0.5" />
+                  <span className="leading-snug">{errorMessage}</span>
+                </div>
+                {activeTab === 'login' && errorMessage.toLowerCase().includes('belum terdaftar') && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveTab('register');
+                      setErrorMessage(null);
+                    }}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-[#ff2a7a] via-[#ff3b88] to-[#e11d48] text-white font-black text-xs flex items-center justify-center gap-1.5 shadow-md shadow-pink-500/30 active:scale-98 transition-all cursor-pointer border border-pink-300/40"
+                  >
+                    <UserPlus className="w-3.5 h-3.5" />
+                    <span>Daftar Akun Baru Sekarang</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                )}
               </motion.div>
             )}
             {infoMessage && (
@@ -522,7 +557,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                 initial={{ opacity: 0, y: -6 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -6 }}
-                className="p-3 mb-3 bg-emerald-500/25 backdrop-blur-xs border border-emerald-500/60 text-emerald-200 rounded-2xl text-xs font-bold flex items-center gap-2 text-left"
+                className="p-3 mb-3 bg-emerald-950/90 border border-emerald-500/60 text-emerald-200 rounded-2xl text-xs font-bold flex items-center gap-2 text-left"
               >
                 <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-300" />
                 <span>{infoMessage}</span>
@@ -537,7 +572,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
             <div className="space-y-4 text-left">
               {/* Opsi 1: Akun Tersimpan (Masuk Cepat 1-Ketukan) */}
               {registeredUser && (
-                <div className="p-3.5 rounded-2xl bg-black/35 border border-pink-500/40 backdrop-blur-xs mb-3 shadow-inner">
+                <div className="p-3.5 rounded-2xl bg-[#091a34] border border-pink-500/40 mb-3 shadow-md">
                   <div className="flex items-center gap-3 mb-2.5">
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-500 text-white flex items-center justify-center font-black text-sm shadow-md">
                       {registeredUser.name.charAt(0).toUpperCase()}
@@ -560,7 +595,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                     onClick={handleQuickLogin}
                     className="w-full py-3 rounded-xl bg-gradient-to-r from-[#ff2a7a] via-[#ff3b88] to-[#e11d48] hover:from-[#ff4088] hover:to-[#f43f5e] active:scale-[0.98] text-white font-black text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-pink-500/35 border border-pink-300/40 transition-all cursor-pointer"
                   >
-                    <Sparkles className="w-4 h-4 text-amber-300 animate-spin" style={{ animationDuration: '4s' }} />
+                    <Sparkles className="w-4 h-4 text-amber-300" />
                     <span>Masuk Langsung sebagai {registeredUser.name}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
@@ -584,7 +619,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       onChange={(e) => setLoginContact(e.target.value)}
                       placeholder="Contoh: nama@gmail.com / 081234..."
                       required
-                      className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/40 border border-cyan-400/50 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none backdrop-blur-xs transition-all shadow-inner"
+                      className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/50 border border-cyan-400/40 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none transition-all shadow-inner"
                     />
                   </div>
                 </div>
@@ -657,7 +692,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         onChange={(e) => setRegName(e.target.value)}
                         placeholder="Contoh: Kenji / Budi"
                         required
-                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/40 border border-cyan-400/50 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none backdrop-blur-xs transition-all shadow-inner"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/50 border border-cyan-400/40 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none transition-all shadow-inner"
                       />
                     </div>
                   </div>
@@ -680,7 +715,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         onChange={(e) => setRegAge(e.target.value)}
                         placeholder="Contoh: 19"
                         required
-                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/40 border border-cyan-400/50 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none backdrop-blur-xs transition-all shadow-inner"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/50 border border-cyan-400/40 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none transition-all shadow-inner"
                       />
                     </div>
                   </div>
@@ -691,7 +726,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                       <span>Daftar Menggunakan</span>
                       <span className="text-rose-400 font-black">*</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-2 p-1 bg-black/30 rounded-2xl border border-cyan-400/30 backdrop-blur-xs mb-2">
+                    <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-2xl border border-cyan-400/30 mb-2">
                       <button
                         type="button"
                         onClick={() => {
@@ -735,7 +770,7 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
                         onChange={(e) => setRegContact(e.target.value)}
                         placeholder={regContactType === 'email' ? 'Contoh: namanda@gmail.com' : 'Contoh: 081234567890'}
                         required
-                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/40 border border-cyan-400/50 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none backdrop-blur-xs transition-all shadow-inner"
+                        className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-black/50 border border-cyan-400/40 text-white placeholder-cyan-200/50 text-xs sm:text-sm font-medium focus:border-cyan-300 focus:ring-2 focus:ring-cyan-400/30 outline-none transition-all shadow-inner"
                       />
                     </div>
                   </div>

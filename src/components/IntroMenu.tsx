@@ -25,6 +25,7 @@ import {
   Check,
   ExternalLink,
   ChevronDown,
+  Lock,
 } from 'lucide-react';
 import { VocabItem } from '../types';
 
@@ -43,7 +44,8 @@ interface IntroMenuProps {
   startDuelSetup: () => void;
   startFavoritesQuiz: () => void;
   favorites: VocabItem[];
-  registeredUser: { name: string; age: string; contact: string } | null;
+  registeredUser: { name: string; age: string | number; contact: string; verified?: boolean; id?: string } | null;
+  isGuest?: boolean;
   user: any;
   levelsData: Record<number, VocabItem[]>;
   currentLevel: number;
@@ -75,6 +77,7 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
   startFavoritesQuiz,
   favorites,
   registeredUser,
+  isGuest = false,
   user,
   levelsData,
   currentLevel,
@@ -89,6 +92,16 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
   completed100Levels = [],
   celebrateLevel100,
 }) => {
+  const userIsGuest = Boolean(
+    isGuest ||
+    !registeredUser ||
+    registeredUser.verified === false ||
+    registeredUser.name === 'Tamu' ||
+    registeredUser.id?.startsWith('guest_') ||
+    user?.isAnonymous ||
+    user?.uid?.startsWith('guest_')
+  );
+
   const [homeSearchQuery, setHomeSearchQuery] = useState('');
   const [showHurufModal, setShowHurufModal] = useState(false);
   const [activeKanaTab, setActiveKanaTab] = useState<'hiragana' | 'katakana'>('hiragana');
@@ -129,6 +142,7 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
       initial="initial"
       animate="animate"
       exit="exit"
+      style={{ willChange: 'transform, opacity', transform: 'translateZ(0)' }}
       className={`w-full rounded-none sm:rounded-[42px] shadow-none sm:shadow-2xl relative z-10 overflow-hidden border-0 sm:border transition-colors duration-200 flex flex-col items-center pb-20 ${
         darkMode
           ? 'bg-[#0b1426] sm:border-slate-800 sm:shadow-slate-950/80'
@@ -143,6 +157,8 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
         <img
           src="/menu_fuji_daytime.jpg"
           alt="Gunung Fuji dan Danau Jepang"
+          loading="eager"
+          decoding="async"
           className="absolute inset-0 w-full h-full object-cover object-center"
           referrerPolicy="no-referrer"
         />
@@ -233,13 +249,26 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
             <button
               onClick={() => {
                 playSfx('click');
+                if (userIsGuest) {
+                  playSfx('wrong');
+                  announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka kuis huruf.');
+                  setShowRegistrationModal(true);
+                  return;
+                }
                 setActiveMode('letters');
                 setShowHurufModal(true);
               }}
-              className="flex flex-col items-center justify-center p-1 active:scale-95 transition-transform group cursor-pointer"
+              className="flex flex-col items-center justify-center p-1 active:scale-95 transition-transform group cursor-pointer relative"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#ff3366] via-[#ec4899] to-[#3b82f6] text-white flex items-center justify-center font-black text-lg shadow-md shadow-rose-500/25 group-hover:scale-105 transition-transform font-serif tracking-tighter">
-                あア
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#ff3366] via-[#ec4899] to-[#3b82f6] text-white flex items-center justify-center font-black text-lg shadow-md shadow-rose-500/25 group-hover:scale-105 transition-transform font-serif tracking-tighter">
+                  あア
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs" title="Terkunci untuk Mode Tamu">
+                    <Lock className="w-2.5 h-2.5" />
+                  </span>
+                )}
               </div>
               <span className="text-xs font-black text-slate-800 dark:text-white mt-2">
                 HURUF
@@ -250,12 +279,25 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
             <button
               onClick={() => {
                 playSfx('click');
+                if (userIsGuest) {
+                  playSfx('wrong');
+                  announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka kuis kanji.');
+                  setShowRegistrationModal(true);
+                  return;
+                }
                 setShowKanjiModal(true);
               }}
-              className="flex flex-col items-center justify-center p-1 active:scale-95 transition-transform group cursor-pointer"
+              className="flex flex-col items-center justify-center p-1 active:scale-95 transition-transform group cursor-pointer relative"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#059669] to-[#10b981] text-white font-black text-2xl flex items-center justify-center shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform font-serif">
-                漢
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#059669] to-[#10b981] text-white font-black text-2xl flex items-center justify-center shadow-md shadow-emerald-500/25 group-hover:scale-105 transition-transform font-serif">
+                  漢
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs" title="Terkunci untuk Mode Tamu">
+                    <Lock className="w-2.5 h-2.5" />
+                  </span>
+                )}
               </div>
               <span className="text-xs font-black text-slate-800 dark:text-white mt-2">
                 KANJI
@@ -266,13 +308,26 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
             <button
               onClick={() => {
                 playSfx('click');
+                if (userIsGuest) {
+                  playSfx('wrong');
+                  announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka kuis kosakata.');
+                  setShowRegistrationModal(true);
+                  return;
+                }
                 setActiveMode('vocab');
                 setShowVocabModal(true);
               }}
-              className="flex flex-col items-center justify-center p-1 active:scale-95 transition-transform group cursor-pointer"
+              className="flex flex-col items-center justify-center p-1 active:scale-95 transition-transform group cursor-pointer relative"
             >
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#f59e0b] to-[#fbbf24] text-white flex items-center justify-center shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform">
-                <Sun className="w-6 h-6 stroke-[2.2]" />
+              <div className="relative">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#f59e0b] to-[#fbbf24] text-white flex items-center justify-center shadow-md shadow-amber-500/25 group-hover:scale-105 transition-transform">
+                  <Sun className="w-6 h-6 stroke-[2.2]" />
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4.5 h-4.5 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs" title="Terkunci untuk Mode Tamu">
+                    <Lock className="w-2.5 h-2.5" />
+                  </span>
+                )}
               </div>
               <span className="text-xs font-black text-slate-800 dark:text-white mt-2">
                 KOSAKATA
@@ -288,6 +343,8 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
             <img
               src="/dict_banner_bg.jpg"
               alt="Kyoto Street and Fuji"
+              loading="eager"
+              decoding="async"
               className="w-full h-full object-cover object-left opacity-60 dark:opacity-30"
               referrerPolicy="no-referrer"
             />
@@ -300,6 +357,12 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
                 <BookOpen className="w-3 h-3" />
                 <span>Kamus</span>
               </span>
+              {userIsGuest && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 text-[9.5px] font-black border border-emerald-500/30">
+                  <Check className="w-2.5 h-2.5" />
+                  <span>Akses Tamu Terbuka</span>
+                </span>
+              )}
               <h2 className="text-sm sm:text-base font-black text-[#0f2757] dark:text-white">
                 Kamus Bahasa Jepang
               </h2>
@@ -364,13 +427,26 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
           <div
             onClick={() => {
               playSfx('click');
+              if (userIsGuest) {
+                playSfx('wrong');
+                announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka peringkat.');
+                setShowRegistrationModal(true);
+                return;
+              }
               switchView('leaderboard');
             }}
-            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group"
+            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group relative"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-400 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-400/25 group-hover:scale-105 transition-transform">
-                <Star className="w-5 h-5 fill-white" />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-amber-400 to-yellow-400 text-white flex items-center justify-center shrink-0 shadow-sm shadow-amber-400/25 group-hover:scale-105 transition-transform">
+                  <Star className="w-5 h-5 fill-white" />
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs">
+                    <Lock className="w-2 h-2" />
+                  </span>
+                )}
               </div>
               <div className="text-left min-w-0">
                 <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-white truncate">
@@ -388,13 +464,26 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
           <div
             onClick={() => {
               playSfx('click');
+              if (userIsGuest) {
+                playSfx('wrong');
+                announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka duel 1v1.');
+                setShowRegistrationModal(true);
+                return;
+              }
               startDuelSetup();
             }}
-            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group"
+            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group relative"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-purple-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-violet-500/25 group-hover:scale-105 transition-transform">
-                <Users className="w-5 h-5" />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-violet-600 to-purple-500 text-white flex items-center justify-center shrink-0 shadow-sm shadow-violet-500/25 group-hover:scale-105 transition-transform">
+                  <Users className="w-5 h-5" />
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs">
+                    <Lock className="w-2 h-2" />
+                  </span>
+                )}
               </div>
               <div className="text-left min-w-0">
                 <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-white truncate">
@@ -412,13 +501,26 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
           <div
             onClick={() => {
               playSfx('click');
+              if (userIsGuest) {
+                playSfx('wrong');
+                announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka kuis favorit.');
+                setShowRegistrationModal(true);
+                return;
+              }
               startFavoritesQuiz();
             }}
-            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group"
+            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group relative"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-400 text-white flex items-center justify-center shrink-0 shadow-sm shadow-rose-500/25 group-hover:scale-105 transition-transform">
-                <Heart className="w-5 h-5 fill-white" />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-rose-500 to-pink-400 text-white flex items-center justify-center shrink-0 shadow-sm shadow-rose-500/25 group-hover:scale-105 transition-transform">
+                  <Heart className="w-5 h-5 fill-white" />
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs">
+                    <Lock className="w-2 h-2" />
+                  </span>
+                )}
               </div>
               <div className="text-left min-w-0">
                 <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-white truncate">
@@ -436,13 +538,26 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
           <div
             onClick={() => {
               playSfx('click');
+              if (userIsGuest) {
+                playSfx('wrong');
+                announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka fitur online.');
+                setShowRegistrationModal(true);
+                return;
+              }
               startDuelSetup();
             }}
-            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group"
+            className="rounded-[22px] bg-white dark:bg-slate-900 border border-sky-100/90 dark:border-slate-800 p-3 flex items-center justify-between shadow-sm hover:shadow-md transition-all active:scale-95 cursor-pointer group relative"
           >
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-cyan-400 text-white flex items-center justify-center shrink-0 shadow-sm shadow-teal-500/25 group-hover:scale-105 transition-transform">
-                <Globe className="w-5 h-5" />
+              <div className="relative">
+                <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-teal-500 to-cyan-400 text-white flex items-center justify-center shrink-0 shadow-sm shadow-teal-500/25 group-hover:scale-105 transition-transform">
+                  <Globe className="w-5 h-5" />
+                </div>
+                {userIsGuest && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-slate-950/90 text-amber-300 border border-amber-400/50 flex items-center justify-center shadow-xs">
+                    <Lock className="w-2 h-2" />
+                  </span>
+                )}
               </div>
               <div className="text-left min-w-0">
                 <h4 className="text-xs sm:text-sm font-black text-slate-800 dark:text-white truncate">
@@ -458,7 +573,7 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
         </div>
 
         {/* USER REGISTRATION / ACCOUNT STATUS CARD */}
-        {registeredUser ? (
+        {registeredUser && !userIsGuest ? (
           <div
             className={`flex items-center justify-between p-3 rounded-2xl border text-xs font-bold transition-all ${
               darkMode
@@ -496,27 +611,27 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
               playSfx('click');
               setShowRegistrationModal(true);
             }}
-            className={`w-full flex items-center justify-between p-3 rounded-2xl border text-xs font-bold transition-all group active:scale-98 cursor-pointer ${
+            className={`w-full flex items-center justify-between p-3.5 rounded-2xl border text-xs font-bold transition-all group active:scale-98 cursor-pointer ${
               darkMode
-                ? 'bg-amber-500/10 border-amber-500/30 text-amber-300 hover:bg-amber-500/15'
-                : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100/70 shadow-sm'
+                ? 'bg-amber-500/15 border-amber-500/40 text-amber-300 hover:bg-amber-500/25'
+                : 'bg-amber-50 border-amber-300 text-amber-900 hover:bg-amber-100 shadow-sm'
             }`}
           >
             <div className="flex items-center gap-2.5 text-left">
-              <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs text-base">
-                📝
+              <div className="w-8 h-8 rounded-xl bg-amber-500 text-slate-950 flex items-center justify-center font-black shadow-xs text-base shrink-0">
+                🔒
               </div>
               <div>
                 <div className="font-black text-[11px] flex items-center gap-1.5">
-                  <span>Daftar Akun untuk Membuka Semua Fitur</span>
+                  <span className="text-amber-600 dark:text-amber-400">Mode Tamu: Akses Hanya Kamus</span>
                   <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
                 </div>
-                <p className="text-[10px] opacity-80 font-semibold">
-                  Simpan progres belajar & ranking online
+                <p className="text-[10px] opacity-85 font-medium">
+                  Daftar akun gratis untuk membuka Kuis, Huruf, Kanji, dan Duel
                 </p>
               </div>
             </div>
-            <span className="text-xs font-black text-amber-600 dark:text-amber-400 group-hover:translate-x-0.5 transition-transform">
+            <span className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-[#ff2a7a] to-[#ff3b88] text-white font-black text-[10px] shadow-sm shrink-0">
               Daftar →
             </span>
           </button>
@@ -711,7 +826,7 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
       {/* ======================================================== */}
       <div className="fixed bottom-0 left-0 right-0 max-w-[430px] mx-auto z-40 px-3 pb-3 pt-1">
         <div
-          className={`w-full rounded-[28px] py-2 px-5 shadow-2xl border backdrop-blur-xl flex items-center justify-around transition-colors ${
+          className={`w-full rounded-[28px] py-2 px-5 shadow-2xl border flex items-center justify-around transition-colors ${
             darkMode
               ? 'bg-[#06142a]/95 border-sky-500/30 shadow-slate-950/80 text-slate-400'
               : 'bg-white/95 border-sky-200/80 shadow-slate-300/80 text-slate-600'
@@ -765,6 +880,12 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
           <button
             onClick={() => {
               playSfx('click');
+              if (userIsGuest) {
+                playSfx('wrong');
+                announce('Mode Tamu hanya dapat membuka kamus. Silakan daftar untuk membuka kuis.');
+                setShowRegistrationModal(true);
+                return;
+              }
               setShowVocabModal(true);
             }}
             className={`flex flex-col items-center gap-1 relative py-1 px-3 transition-colors cursor-pointer ${
@@ -773,7 +894,14 @@ export const IntroMenu: React.FC<IntroMenuProps> = ({
                 : 'hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            <Trophy className="w-5 h-5" />
+            <div className="relative">
+              <Trophy className="w-5 h-5" />
+              {userIsGuest && (
+                <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 rounded-full bg-slate-900 text-amber-300 border border-amber-400/50 flex items-center justify-center">
+                  <Lock className="w-2 h-2" />
+                </span>
+              )}
+            </div>
             <span className="text-[10px] font-bold">Kuis</span>
             {view === 'quiz' && (
               <motion.div

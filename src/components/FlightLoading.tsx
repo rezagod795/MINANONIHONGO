@@ -10,9 +10,17 @@ export const FlightLoading: React.FC<FlightLoadingProps> = ({ onComplete }) => {
   const [progress, setProgress] = useState<number>(0);
 
   useEffect(() => {
+    // Preload menu assets during flight loading so IntroMenu mounts with zero layout shift or decode lag
+    const preload1 = new Image();
+    preload1.src = '/menu_fuji_daytime.jpg';
+    const preload2 = new Image();
+    preload2.src = '/dict_banner_bg.jpg';
+    const preload3 = new Image();
+    preload3.src = '/sunset_fuji_reg.jpg';
+
     const startTime = Date.now();
-    // Durasi loading yang halus dan pas (sekitar 3.8 detik)
-    const duration = 3800; 
+    // Durasi loading yang pas dan halus (~3.4 detik)
+    const duration = 3400; 
 
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
@@ -23,9 +31,9 @@ export const FlightLoading: React.FC<FlightLoadingProps> = ({ onComplete }) => {
         clearInterval(timer);
         setTimeout(() => {
           onComplete();
-        }, 400);
+        }, 50);
       }
-    }, 30);
+    }, 50);
 
     return () => clearInterval(timer);
   }, [onComplete]);
@@ -45,8 +53,9 @@ export const FlightLoading: React.FC<FlightLoadingProps> = ({ onComplete }) => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0, scale: 1.03 }}
-      transition={{ duration: 0.45 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.22, ease: 'easeOut' }}
+      style={{ willChange: 'opacity' }}
       className="fixed inset-0 z-[100] flex flex-col items-center justify-between p-4 sm:p-6 select-none overflow-hidden"
     >
       {/* Background Image: Gunung Fuji, Danau, Pagoda, Sakura, Lampion & Meja Tradisional */}

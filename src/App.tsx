@@ -59,7 +59,7 @@ const sounds = {
   win: new Howl({ src: ['https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3'], volume: 0.6 }),
 };
 
-// Smooth & Cinematic view transitions
+// Smooth & Cinematic GPU-accelerated view transitions (Optimized for Android APK & Mobile WebView)
 const viewVariants = {
   initial: (custom: { direction?: number; effect?: 'curtain' | 'slide' | 'fade' } = {}) => {
     const dir = custom?.direction ?? 1;
@@ -67,14 +67,13 @@ const viewVariants = {
     if (eff === 'slide') {
       return {
         opacity: 0,
-        x: dir > 0 ? 38 : -38,
-        scale: 0.97,
-        filter: 'blur(4px)',
+        x: dir > 0 ? 32 : -32,
+        scale: 0.98,
       };
     }
     if (eff === 'curtain') {
       return {
-        opacity: 0.85,
+        opacity: 0.9,
         scale: 0.99,
       };
     }
@@ -89,9 +88,8 @@ const viewVariants = {
       opacity: 1,
       x: 0,
       scale: 1,
-      filter: 'blur(0px)',
       transition: {
-        duration: eff === 'slide' ? 0.35 : 0.22,
+        duration: eff === 'slide' ? 0.28 : 0.2,
         ease: [0.16, 1, 0.3, 1],
       },
     };
@@ -102,11 +100,10 @@ const viewVariants = {
     if (eff === 'slide') {
       return {
         opacity: 0,
-        x: dir > 0 ? -30 : 30,
-        scale: 0.97,
-        filter: 'blur(4px)',
+        x: dir > 0 ? -24 : 24,
+        scale: 0.98,
         transition: {
-          duration: 0.22,
+          duration: 0.18,
           ease: [0.16, 1, 0.3, 1],
         },
       };
@@ -114,7 +111,7 @@ const viewVariants = {
     return {
       opacity: 0,
       scale: 0.98,
-      transition: { duration: 0.16, ease: [0.16, 1, 0.3, 1] },
+      transition: { duration: 0.15, ease: [0.16, 1, 0.3, 1] },
     };
   },
 };
@@ -199,18 +196,15 @@ export default function App() {
   // Selalu tampilkan intro loading animasi setiap aplikasi dibuka, di-refresh, atau di-restart
   const [isLoadingIntro, setIsLoadingIntro] = useState<boolean>(true);
   
-  // Force cache clear for data fixes (Version 1.0.7)
+  // Force cache clear for data fixes (Version 1.0.9)
   useEffect(() => {
-    const APP_VERSION = '1.0.8';
+    const APP_VERSION = '1.0.9';
     const storedVersion = localStorage.getItem('app_data_version');
     if (storedVersion !== APP_VERSION) {
       localStorage.setItem('app_data_version', APP_VERSION);
-      if (storedVersion) {
-        // Clear session data that might be stale
-        sessionStorage.clear();
-        // Clear highscores if they are corrupted? No, just keep them but clear session.
-        window.location.reload();
-      }
+      try {
+        sessionStorage.removeItem('minanihongo_session_logged_in');
+      } catch {}
     }
   }, []);
 
@@ -274,14 +268,8 @@ export default function App() {
     xpEarned: number;
   } | null>(null);
 
-  // Status login aplikasi (Menampilkan tampilan Login setelah loading jika belum login)
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    try {
-      return sessionStorage.getItem('minanihongo_session_logged_in') === 'true';
-    } catch {
-      return false;
-    }
-  });
+  // Status login aplikasi (Menampilkan tampilan Login dan Daftar setelah loading jika belum login)
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
   const handleLoginSuccess = (profile: RegisteredUserProfile) => {
     setRegisteredUser(profile);
@@ -367,6 +355,7 @@ export default function App() {
       sessionStorage.removeItem('minanihongo_session_logged_in');
       setUser(null);
       setIsLoggedIn(false);
+      switchView('intro');
       if (isFirebaseConfigured()) {
         await logout();
       }
@@ -374,6 +363,16 @@ export default function App() {
       console.warn('Logout error:', err);
     }
   };
+
+  // Status Tamu: Jika belum mendaftar, atau masuk sebagai akun tamu
+  const isGuest = useMemo(() => {
+    if (!registeredUser) return true;
+    if (registeredUser.verified === false) return true;
+    if (registeredUser.name === 'Tamu') return true;
+    if (registeredUser.id?.startsWith('guest_')) return true;
+    if (user?.isAnonymous || user?.uid?.startsWith('guest_')) return true;
+    return false;
+  }, [registeredUser, user]);
 
   const [activeUsers, setActiveUsers] = useState<any[]>([]);
   const [visitors, setVisitors] = useState<any[]>([]);
@@ -1631,6 +1630,14 @@ export default function App() {
       return;
     }
 
+    // Mode tamu hanya bisa membuka kamus ('dictionary'), profil ('profile'), dan beranda ('intro')
+    if (isGuest && nextView !== 'intro' && nextView !== 'dictionary' && nextView !== 'profile') {
+      playSfx('wrong');
+      showToast('🔒 Mode Tamu hanya dapat membuka Kamus. Silakan Masuk atau Daftar Akun untuk membuka kuis dan fitur lainnya!', 'warning');
+      setShowRegistrationModal(true);
+      return;
+    }
+
     if (nextView === view && !options?.levelNumber) return;
 
     const isLeavingToMain = nextView === 'mode_select' || nextView === 'intro';
@@ -2143,6 +2150,12 @@ export default function App() {
 
   const startFavoritesQuiz = () => {
     playSfx('click');
+    if (isGuest) {
+      playSfx('wrong');
+      showToast('🔒 Mode Tamu hanya dapat membuka Kamus. Silakan Masuk atau Daftar Akun untuk membuka kuis favorit!', 'warning');
+      setShowRegistrationModal(true);
+      return;
+    }
     if (favorites.length === 0) {
       alert('Belum ada kata favorit! Tandai kata dengan bintang saat kuis untuk menambahkannya.');
       return;
@@ -2160,6 +2173,12 @@ export default function App() {
 
   const startDuelSetup = () => {
     playSfx('click');
+    if (isGuest) {
+      playSfx('wrong');
+      showToast('🔒 Mode Tamu hanya dapat membuka Kamus. Silakan Masuk atau Daftar Akun untuk bermain Duel!', 'warning');
+      setShowRegistrationModal(true);
+      return;
+    }
     switchView('duel_setup');
   };
 
@@ -2804,36 +2823,18 @@ export default function App() {
         {srAnnouncement}
       </div>
 
-      {/* Background Image Container with Blur */}
-      {/* Dynamic Background Elements */}
-      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden" aria-hidden="true">
-        <div 
-          className={`absolute -top-24 -left-24 w-80 h-80 rounded-full blur-[60px] opacity-10 transition-colors duration-1000 ${
-            theme.id === 'morning' ? 'bg-rose-400' : 
-            theme.id === 'day' ? 'bg-blue-400' : 
-            theme.id === 'evening' ? 'bg-amber-400' : 'bg-indigo-600'
-          }`}
-        />
-        <div 
-          className={`absolute -bottom-24 -right-24 w-80 h-80 rounded-full blur-[60px] opacity-10 transition-colors duration-1000 ${
-            theme.id === 'morning' ? 'bg-orange-400' : 
-            theme.id === 'day' ? 'bg-sky-400' : 
-            theme.id === 'evening' ? 'bg-rose-400' : 'bg-purple-600'
-          }`}
-        />
-      </div>
-
+      {/* Lightweight GPU-friendly Dynamic Background (Optimized for APK & WebView) */}
       <div 
-        className={`fixed inset-0 z-0 pointer-events-none transition-colors duration-300 ${darkMode ? 'bg-slate-950' : 'bg-slate-50'}`}
+        className={`fixed inset-0 z-0 pointer-events-none transition-colors duration-300 ${darkMode ? 'bg-slate-950' : 'bg-[#f4f8fc]'}`}
         aria-hidden="true"
       >
         <div 
-          className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-500 ${darkMode ? 'opacity-20 grayscale' : 'opacity-40 grayscale-[20%]'}`}
-          style={{ 
-            backgroundImage: 'url("https://images.unsplash.com/photo-1545569341-9eb8b30979d9?q=80&w=2070&auto=format&fit=crop")',
-          }}
+          className={`absolute inset-0 transition-opacity duration-500 ${
+            darkMode 
+              ? 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-900 via-slate-950 to-slate-950' 
+              : 'bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-sky-50 via-[#f0f6fc] to-[#e8f1fb]'
+          }`} 
         />
-        <div className={`absolute inset-0 transition-colors duration-300 ${darkMode ? 'bg-gradient-to-br from-slate-950 via-slate-900/40 to-slate-950' : 'bg-gradient-to-br from-white/80 via-transparent to-white/80'}`} />
       </div>
 
       {/* Theme Toggle & Indicator - Centered Top Toolbar */}
@@ -2983,7 +2984,15 @@ export default function App() {
       </motion.div>
       )}
 
-      <div id="main-container" tabIndex={-1} className={`relative w-full ${view === 'intro' || view === 'profile' ? 'max-w-full sm:max-w-[440px]' : 'max-w-[420px]'} flex items-center justify-center outline-none ${view !== 'intro' && view !== 'profile' ? 'pt-18 sm:pt-20' : ''}`}>
+      <div 
+        id="main-container" 
+        tabIndex={-1} 
+        style={{ 
+          visibility: isLoadingIntro ? 'hidden' : 'visible',
+          willChange: 'transform, opacity'
+        }}
+        className={`relative w-full ${view === 'intro' || view === 'profile' ? 'max-w-full sm:max-w-[440px]' : 'max-w-[420px]'} flex items-center justify-center outline-none ${view !== 'intro' && view !== 'profile' ? 'pt-18 sm:pt-20' : ''}`}
+      >
         <AnimatePresence mode="wait" initial={false} custom={{ direction: slideDirection, effect: transitionEffect }}>
           {view === 'intro' ? (
                         <IntroMenu
@@ -3002,6 +3011,7 @@ export default function App() {
               startFavoritesQuiz={startFavoritesQuiz}
               favorites={favorites}
               registeredUser={registeredUser}
+              isGuest={isGuest}
               user={user}
               levelsData={levelsData}
               currentLevel={currentLevel}
@@ -3029,6 +3039,7 @@ export default function App() {
               <ProfileView
                 user={user}
                 registeredUser={registeredUser}
+                isGuest={isGuest}
                 onUpdateProfile={(updated) => {
                   if (registeredUser) {
                     const nextProfile = { ...registeredUser, ...updated };

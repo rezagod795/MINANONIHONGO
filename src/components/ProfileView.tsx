@@ -25,7 +25,8 @@ import {
   ExternalLink,
   Camera,
   Zap,
-  Crown
+  Crown,
+  Lock
 } from 'lucide-react';
 import { RegisteredUserProfile } from './RegistrationModal';
 import { VocabItem } from '../types';
@@ -34,6 +35,7 @@ import { calculateProfileLevel, LEVEL_TIERS, ProfileLevelInfo } from '../lib/lev
 interface ProfileViewProps {
   user: any;
   registeredUser: RegisteredUserProfile | null;
+  isGuest?: boolean;
   onUpdateProfile: (updated: Partial<RegisteredUserProfile>) => void;
   onLogout: () => void;
   onBackToHome: () => void;
@@ -52,6 +54,7 @@ interface ProfileViewProps {
 export const ProfileView: React.FC<ProfileViewProps> = ({
   user,
   registeredUser,
+  isGuest = false,
   onUpdateProfile,
   onLogout,
   onBackToHome,
@@ -243,9 +246,17 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
               </p>
               
               {/* ID Badge Pill */}
-              <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#0a1e3f]/80 backdrop-blur-md border border-cyan-400/40 text-[10px] font-bold text-sky-200 shadow-sm">
-                <User className="w-3 h-3 text-cyan-400" />
-                <span>ID: {userId}</span>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[#0a1e3f]/80 backdrop-blur-md border border-cyan-400/40 text-[10px] font-bold text-sky-200 shadow-sm">
+                  <User className="w-3 h-3 text-cyan-400" />
+                  <span>ID: {userId}</span>
+                </div>
+                {isGuest && (
+                  <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/20 backdrop-blur-md border border-amber-400/50 text-[10px] font-black text-amber-300 shadow-sm">
+                    <Lock className="w-2.5 h-2.5" />
+                    <span>Mode Tamu (Hanya Kamus)</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -536,9 +547,16 @@ export const ProfileView: React.FC<ProfileViewProps> = ({
                 playSfx('click');
                 onNavigateTab('quiz');
               }}
-              className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-all cursor-pointer py-1 px-3 active:scale-95"
+              className="flex flex-col items-center gap-1 text-slate-400 hover:text-white transition-all cursor-pointer py-1 px-3 active:scale-95 relative"
             >
-              <Trophy className="w-5 h-5" />
+              <div className="relative">
+                <Trophy className="w-5 h-5" />
+                {isGuest && (
+                  <span className="absolute -top-1 -right-1.5 w-3.5 h-3.5 rounded-full bg-slate-900 text-amber-300 border border-amber-400/50 flex items-center justify-center">
+                    <Lock className="w-2 h-2" />
+                  </span>
+                )}
+              </div>
               <span className="text-[10px] font-bold">Kuis</span>
             </button>
 
